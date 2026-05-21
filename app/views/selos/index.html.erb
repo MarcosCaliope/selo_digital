@@ -1,0 +1,39 @@
+<h1>Selos Disponíveis</h1>
+
+<% if @erro %>
+  <div style="color:red; background:#fee; padding:1rem; border:1px solid red; border-radius:4px;">
+    <strong>Erro:</strong> <%= @erro %>
+  </div>
+
+<% elsif @resultado %>
+  <% retorno = @resultado %>
+
+  <p>
+    <strong>Código:</strong> <%= retorno[:codigo] %> &nbsp;
+    <strong>Status:</strong> <%= retorno[:status] %> &nbsp;
+    <strong>Mensagem:</strong> <%= retorno[:mensagem] %>
+  </p>
+
+  <% if retorno[:selos].any? %>
+    <table border="1" cellpadding="8" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Código do Selo</th>
+          <th>Saldo</th>
+          <th>Cota</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% retorno[:selos].each do |selo| %>
+          <tr>
+            <td><%= selo[:codigo_selo] %></td>
+            <td><%= selo[:saldo] %></td>
+            <td><%= selo[:cota] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p><em>Nenhum selo disponível retornado.</em></p>
+  <% end %>
+<% end %>

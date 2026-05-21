@@ -6,12 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Selo Digital** is a Rails 8.0 application (Ruby 3.4.5) backed by PostgreSQL. The app name is `SeloDigital` (module namespace) and the database is named `siscartd`.
 
+The application integrates with the **TJCE (Tribunal de Justiça do Ceará) Selo Digital** SOAP web service using digital certificate (`.pfx`) authentication. It queries and manages digital seals issued by the court system.
+
 ## Common Commands
 
 ```bash
 bin/setup          # Install deps, prepare DB, start server
 bin/dev            # Start development server (rails server)
-bin/rails server   # Same as above
 
 bin/rails db:prepare   # Create/migrate DB
 bin/rails db:migrate
@@ -39,8 +40,15 @@ bin/brakeman       # Security static analysis
 
 **Deployment:** Kamal (`config/deploy.yml`) — builds a Docker image and deploys to configured servers. Secrets via `.kamal/secrets`, master key via `RAILS_MASTER_KEY`.
 
-**Recurring jobs:** Defined in `config/recurring.yml` (Solid Queue scheduler). Currently only the production job to clear finished queue entries is configured.
+**Recurring jobs:** Defined in `config/recurring.yml` (Solid Queue scheduler).
 
 ## Database
 
-Development and test both connect to PostgreSQL at `192.168.0.152:5432`, database `siscartd`. Credentials are set directly in `config/database.yml` (development only; production uses `DATABASE_URL` or env vars).
+Development and test both connect to PostgreSQL at `172.24.0.1:5432` (WSL2 host gateway), database `siscartd`. The host defaults to this IP but can be overridden with the `DB_HOST` environment variable. Credentials are set directly in `config/database.yml` (development only; production uses `DATABASE_URL` or env vars).
+
+## External Service Integration
+
+The app communicates with the TJCE Selo Digital SOAP web service:
+- **Homologation WSDL:** `https://homologacao-selodigital.tjce.jus.br/wsselodigital-homologacao/SelosDisponiveis?wsdl`
+- **Authentication:** Digital certificate (`.pfx` format) with passphrase — certificate path and password must be configured, not hardcoded
+- **Protocol:** SOAP — use a gem like `savon` for SOAP client integration
