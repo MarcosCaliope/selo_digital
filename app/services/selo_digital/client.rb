@@ -5,8 +5,9 @@ module SeloDigital
   class Client
     ENDPOINT_HOMOLOGACAO = "https://homologacao-selodigital.tjce.jus.br/wsselodigital-homologacao/SelosDisponiveis"
     ENDPOINT_PRODUCAO    = "https://selodigital.tjce.jus.br/wsselodigital/SelosDisponiveis"
-    NAMESPACE_SD  = "http://service.selosdisponiveis.selodigital.tjce.jus.br/"
-    NAMESPACE_ENV = "http://schemas.xmlsoap.org/soap/envelope/"
+    NAMESPACE_SD     = "http://service.selosdisponiveis.selodigital.tjce.jus.br/"
+    NAMESPACE_ENV    = "http://schemas.xmlsoap.org/soap/envelope/"
+    NAMESPACE_SCHEMA = "http://www.tjce.jus.br/selodigital/schemas"
 
     # Aceita PFX (pfx_path + pfx_password) ou cert/key extraídos (cert_path + key_path)
     # ambiente: 1 = homologação, 2 = produção
