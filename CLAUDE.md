@@ -8,6 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The application integrates with the **TJCE (Tribunal de Justiça do Ceará) Selo Digital** SOAP web service using mutual TLS (mTLS) authentication via digital certificate (`.pfx`). It queries and manages digital seals issued by the court system.
 
+The app is effectively single-route: both root `/` and `/selos` point to `SelosController#index`, which calls `SeloDigital::Client` and renders the result.
+
 ## Common Commands
 
 ```bash
@@ -24,7 +26,10 @@ bin/rails test:system                   # Run system tests (Capybara/Selenium)
 
 bin/rubocop        # Lint (rubocop-rails-omakase style)
 bin/brakeman       # Security static analysis
+bin/importmap audit  # Audit JS dependencies for vulnerabilities
 ```
+
+CI runs all four of these: `brakeman`, `importmap audit`, `rubocop`, and `rails test test:system`.
 
 ## Architecture
 
@@ -40,7 +45,7 @@ bin/brakeman       # Security static analysis
 
 **Deployment:** Kamal (`config/deploy.yml`) — builds a Docker image and deploys to configured servers. Secrets via `.kamal/secrets`, master key via `RAILS_MASTER_KEY`.
 
-**Recurring jobs:** Defined in `config/recurring.yml` (Solid Queue scheduler).
+**Recurring jobs:** Defined in `config/recurring.yml` (Solid Queue scheduler). Currently only one production job: clears finished Solid Queue jobs every hour.
 
 ## Database
 
@@ -68,6 +73,24 @@ openssl pkcs12 -legacy -in certs/arquivo.pfx -nocerts -nodes -out certs/client.k
 
 **The `certs/` directory is gitignored** — certificate files must be provisioned manually on each environment.
 
-**Configuration:** `codigo_serventia` is read from `Rails.application.credentials.dig(:selo_digital, :codigo_serventia)` or falls back to the `SELO_DIGITAL_SERVENTIA` env var (default `"000401"`). The PFX path and password are currently hardcoded in `SelosController` — these should be moved to credentials or env vars.
+**Configuration:** `codigo_serventia` is read from `Rails.application.credentials.dig(:selo_digital, :codigo_serventia)` or falls back to the `SELO_DIGITAL_SERVENTIA` env var (default `"000401"`).
 
-**Response parsing:** `Nokogiri::XML` parses the SOAP response. `SeloDigital::Error` is the custom error class raised on invalid responses.
+**Return structure** of `SeloDigital::Client#consulta_selos_disponiveis`:
+```ruby
+{
+  codigo:   String,   # response code
+  status:   Integer,  # 0 = success
+  mensagem: String,
+  selos: [
+    { codigo_selo: Integer, saldo: Integer, cota: Integer }
+  ]
+}
+```
+`SeloDigital::Error` is raised on missing or invalid responses.
+
+**Response parsing:** `Nokogiri::XML` parses the SOAP response. Namespaces are stripped with `remove_namespaces!` before XPath queries.
+
+## Known Technical Debt
+
+- **Hardcoded credentials in `SelosController`**: the PFX path (`certs/1010426078.pfx`) and password are hardcoded. These must be moved to Rails credentials or environment variables before production use.
+- **`VERIFY_NONE` in `SeloDigital::Client#post`**: server TLS certificate is not verified (`OpenSSL::SSL::VERIFY_NONE`). This should be replaced with proper CA verification in production.
