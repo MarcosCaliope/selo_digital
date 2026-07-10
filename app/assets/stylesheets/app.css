@@ -1,0 +1,154 @@
+/*
+ * This is a manifest file that'll be compiled into application.css.
+ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f5f7fa;
+  color: #1a1a2e;
+  line-height: 1.5;
+}
+
+/* Container */
+.sd-container {
+  max-width: 860px;
+  margin: 2.5rem auto;
+  padding: 0 1.25rem;
+}
+
+/* Header */
+.sd-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.sd-header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.sd-subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.2rem;
+}
+
+/* Button */
+.sd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1.1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.sd-btn:hover { background: #1e40af; }
+
+/* Alerts */
+.sd-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  border: 1px solid transparent;
+}
+.sd-alert p { font-size: 0.9rem; margin-top: 0.2rem; }
+.sd-alert__icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 0.1rem; }
+
+.sd-alert--error   { background: #fef2f2; border-color: #fca5a5; color: #991b1b; }
+.sd-alert--warning { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+.sd-alert--info    { background: #eff6ff; border-color: #93c5fd; color: #1e40af; }
+
+/* Table */
+.sd-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+
+.sd-table thead {
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.sd-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.sd-table td {
+  padding: 0.85rem 1rem;
+  font-size: 0.925rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.sd-table tbody tr:last-child td { border-bottom: none; }
+.sd-table tbody tr:hover { background: #f8faff; }
+
+.sd-num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* Badge */
+.sd-badge {
+  display: inline-block;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+/* Progress bar */
+.sd-progress {
+  height: 7px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 3px;
+}
+.sd-progress__bar {
+  height: 100%;
+  background: #1d4ed8;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.sd-progress__bar--low { background: #dc2626; }
+.sd-progress__label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Timestamp */
+.sd-timestamp {
+  margin-top: 0.9rem;
+  font-size: 0.78rem;
+  color: #9ca3af;
+  text-align: right;
+}

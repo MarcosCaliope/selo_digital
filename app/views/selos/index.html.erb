@@ -1,39 +1,69 @@
-<h1>Selos Disponíveis</h1>
+<% content_for :title, "Selos Disponíveis — Selo Digital TJCE" %>
 
-<% if @erro %>
-  <div style="color:red; background:#fee; padding:1rem; border:1px solid red; border-radius:4px;">
-    <strong>Erro:</strong> <%= @erro %>
+<div class="sd-container">
+  <div class="sd-header">
+    <div>
+      <h1>Selos Disponíveis</h1>
+      <p class="sd-subtitle">Cartório 1º Ofício Distribuição, Prot. e Títulos — Comarca de Fortaleza</p>
+    </div>
+    <%= link_to "Atualizar", root_path, class: "sd-btn" %>
   </div>
 
-<% elsif @resultado %>
-  <% retorno = @resultado %>
+  <% if @erro %>
+    <div class="sd-alert sd-alert--error">
+      <span class="sd-alert__icon">✕</span>
+      <div>
+        <strong>Erro na consulta</strong>
+        <p><%= @erro %></p>
+      </div>
+    </div>
 
-  <p>
-    <strong>Código:</strong> <%= retorno[:codigo] %> &nbsp;
-    <strong>Status:</strong> <%= retorno[:status] %> &nbsp;
-    <strong>Mensagem:</strong> <%= retorno[:mensagem] %>
-  </p>
+  <% elsif @resultado %>
+    <% if @resultado[:codigo].present? %>
+      <div class="sd-alert sd-alert--warning">
+        <span class="sd-alert__icon">⚠</span>
+        <div>
+          <strong><%= @resultado[:codigo] %></strong>
+          <p><%= @resultado[:mensagem] %></p>
+        </div>
+      </div>
+    <% end %>
 
-  <% if retorno[:selos].any? %>
-    <table border="1" cellpadding="8" cellspacing="0">
-      <thead>
-        <tr>
-          <th>Código do Selo</th>
-          <th>Saldo</th>
-          <th>Cota</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% retorno[:selos].each do |selo| %>
+    <% if @resultado[:selos].any? %>
+      <table class="sd-table">
+        <thead>
           <tr>
-            <td><%= selo[:codigo_selo] %></td>
-            <td><%= selo[:saldo] %></td>
-            <td><%= selo[:cota] %></td>
+            <th>Tipo de Selo</th>
+            <th>Saldo Disponível</th>
+            <th>Cota</th>
+            <th>Utilização</th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
-  <% else %>
-    <p><em>Nenhum selo disponível retornado.</em></p>
+        </thead>
+        <tbody>
+          <% @resultado[:selos].each do |selo| %>
+            <% percentual = selo[:cota] > 0 ? (selo[:saldo].to_f / selo[:cota] * 100).round : 0 %>
+            <tr>
+              <td><span class="sd-badge">Tipo <%= selo[:codigo_selo] %></span></td>
+              <td class="sd-num"><%= number_with_delimiter(selo[:saldo]) %></td>
+              <td class="sd-num"><%= number_with_delimiter(selo[:cota]) %></td>
+              <td>
+                <div class="sd-progress">
+                  <div class="sd-progress__bar <%= percentual < 20 ? 'sd-progress__bar--low' : '' %>"
+                       style="width: <%= [percentual, 100].min %>%"></div>
+                </div>
+                <span class="sd-progress__label"><%= percentual %>%</span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <p class="sd-timestamp">Consultado em <%= l(Time.current, format: :long) %></p>
+    <% else %>
+      <div class="sd-alert sd-alert--info">
+        <span class="sd-alert__icon">ℹ</span>
+        <div><strong>Nenhum selo disponível retornado.</strong></div>
+      </div>
+    <% end %>
   <% end %>
-<% end %>
+</div>
