@@ -8,20 +8,27 @@ module SeloDigital
     NAMESPACE_SD     = "http://service.selosdisponiveis.selodigital.tjce.jus.br/"
     NAMESPACE_ENV    = "http://schemas.xmlsoap.org/soap/envelope/"
     NAMESPACE_SCHEMA = "http://www.tjce.jus.br/selodigital/schemas"
+    NAMESPACE_DS     = "http://www.w3.org/2000/09/xmldsig#"
 
-    # Aceita PFX (pfx_path + pfx_password) ou cert/key extraídos (cert_path + key_path)
-    # ambiente: 1 = homologação, 2 = produção
-    def initialize(codigo_serventia:, versao: "2", ambiente: 1,
+    # Aceita PFX (pfx_path + pfx_password) ou cert/key extraídos (cert_path + key_path).
+    # homologacao: false = endpoint de produção (padrão), true = endpoint de homologação.
+    # ambiente: valor enviado no cabeçalho SOAP (1 para produção e homologação do TJCE).
+    def initialize(codigo_serventia:, versao: "1.12", ambiente: 1, homologacao: false,
                    pfx_path: nil, pfx_password: nil,
                    cert_path: nil, key_path: nil)
-      @codigo_serventia  = codigo_serventia
-      @versao            = versao
-      @ambiente          = ambiente
-      @endpoint          = ambiente == 2 ? ENDPOINT_PRODUCAO : ENDPOINT_HOMOLOGACAO
-      @pfx_path          = pfx_path
-      @pfx_password      = pfx_password
-      @cert_path         = cert_path
-      @key_path          = key_path
+      @codigo_serventia = codigo_serventia
+      @versao           = versao
+      @ambiente         = ambiente
+      @endpoint         = homologacao ? ENDPOINT_HOMOLOGACAO : ENDPOINT_PRODUCAO
+
+      if pfx_path
+        pkcs12 = OpenSSL::PKCS12.new(File.binread(pfx_path), pfx_password)
+        @cert  = pkcs12.certificate
+        @key   = pkcs12.key
+      else
+        @cert = OpenSSL::X509::Certificate.new(File.read(cert_path))
+        @key  = OpenSSL::PKey::RSA.new(File.read(key_path))
+      end
     end
 
     def consulta_selos_disponiveis
@@ -51,7 +58,8 @@ module SeloDigital
       <<~XML
         <?xml version="1.0" encoding="UTF-8"?>
         <soapenv:Envelope xmlns:soapenv="#{NAMESPACE_ENV}"
-          xmlns:sd="#{NAMESPACE_SD}">
+          xmlns:sd="#{NAMESPACE_SD}"
+          xmlns:xd="#{NAMESPACE_DS}">
           <soapenv:Header/>
           <soapenv:Body>
             #{body.strip}
@@ -67,18 +75,10 @@ module SeloDigital
 
       uri  = URI.parse(@endpoint)
       http = Net::HTTP.new(uri.host, uri.port)
-
       http.use_ssl     = true
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-
-      if @pfx_path
-        pkcs12 = OpenSSL::PKCS12.new(File.binread(@pfx_path), @pfx_password)
-        http.cert = pkcs12.certificate
-        http.key  = pkcs12.key
-      else
-        http.cert = OpenSSL::X509::Certificate.new(File.read(@cert_path))
-        http.key  = OpenSSL::PKey::RSA.new(File.read(@key_path))
-      end
+      http.cert = @cert
+      http.key  = @key
 
       request = Net::HTTP::Post.new(uri.path)
       request["Content-Type"] = "text/xml; charset=utf-8"

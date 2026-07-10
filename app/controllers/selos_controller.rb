@@ -6,8 +6,7 @@ class SelosController < ApplicationController
       pfx_path:         Rails.root.join(creds[:pfx_path]).to_s,
       pfx_password:     creds[:pfx_password],
       codigo_serventia: creds[:codigo_serventia],
-      versao:           "2",
-      ambiente:         1
+      versao:           "1.12"
     )
 
     @resultado = client.consulta_selos_disponiveis
