@@ -1,10 +1,11 @@
 class SelosController < ApplicationController
   def index
+    creds = Rails.application.credentials.selo_digital!
+
     client = SeloDigital::Client.new(
-      pfx_path:         Rails.root.join("certs/1010426078.pfx").to_s,
-      pfx_password:     "CBL2026",
-      codigo_serventia: Rails.application.credentials.dig(:selo_digital, :codigo_serventia) ||
-                        ENV.fetch("SELO_DIGITAL_SERVENTIA", "000401"),
+      pfx_path:         Rails.root.join(creds[:pfx_path]).to_s,
+      pfx_password:     creds[:pfx_password],
+      codigo_serventia: creds[:codigo_serventia],
       versao:           "2",
       ambiente:         1
     )

@@ -73,7 +73,14 @@ openssl pkcs12 -legacy -in certs/arquivo.pfx -nocerts -nodes -out certs/client.k
 
 **The `certs/` directory is gitignored** — certificate files must be provisioned manually on each environment.
 
-**Configuration:** `codigo_serventia` is read from `Rails.application.credentials.dig(:selo_digital, :codigo_serventia)` or falls back to the `SELO_DIGITAL_SERVENTIA` env var (default `"000401"`).
+**Configuration:** todas as credenciais são lidas de `Rails.application.credentials.selo_digital` (chave obrigatória — ausência lança `KeyError`). O bloco esperado em `credentials.yml.enc`:
+
+```yaml
+selo_digital:
+  pfx_path: certs/1010426078.pfx
+  pfx_password: <senha do pfx>
+  codigo_serventia: "000401"
+```
 
 **Return structure** of `SeloDigital::Client#consulta_selos_disponiveis`:
 ```ruby
@@ -92,5 +99,4 @@ openssl pkcs12 -legacy -in certs/arquivo.pfx -nocerts -nodes -out certs/client.k
 
 ## Known Technical Debt
 
-- **Hardcoded credentials in `SelosController`**: the PFX path (`certs/1010426078.pfx`) and password are hardcoded. These must be moved to Rails credentials or environment variables before production use.
 - **`VERIFY_NONE` in `SeloDigital::Client#post`**: server TLS certificate is not verified (`OpenSSL::SSL::VERIFY_NONE`). This should be replaced with proper CA verification in production.

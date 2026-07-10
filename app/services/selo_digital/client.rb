@@ -61,6 +61,10 @@ module SeloDigital
     end
 
     def post(xml)
+      log_dir = Rails.root.join("log/soap")
+      FileUtils.mkdir_p(log_dir)
+      File.write(log_dir.join("request_#{Time.current.strftime("%Y%m%d_%H%M%S")}.xml"), xml)
+
       uri  = URI.parse(@endpoint)
       http = Net::HTTP.new(uri.host, uri.port)
 
