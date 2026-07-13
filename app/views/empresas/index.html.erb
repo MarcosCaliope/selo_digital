@@ -1,0 +1,57 @@
+<% content_for :title, "Empresas — Selo Digital" %>
+
+<div class="sd-container">
+  <div class="sd-header">
+    <div>
+      <h1>Empresas</h1>
+      <p class="sd-subtitle">Cadastro de cartórios e certificado digital para o webservice do TJCE</p>
+    </div>
+    <div style="display: flex; gap: 0.6rem;">
+      <%= link_to "Movimentação", movimentacao_path, class: "sd-btn sd-btn--secondary" %>
+      <%= link_to "Selos", selos_path, class: "sd-btn sd-btn--secondary" %>
+      <%= link_to "Nova empresa", new_empresa_path, class: "sd-btn" %>
+    </div>
+  </div>
+
+  <% if @empresas.any? %>
+    <table class="sd-table">
+      <thead>
+        <tr>
+          <th>Razão social</th>
+          <th>CNPJ</th>
+          <th>Certificado</th>
+          <th>Ambiente</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @empresas.each do |empresa| %>
+          <tr>
+            <td><%= link_to empresa.snomeempresa, empresa %></td>
+            <td><%= empresa.snocnpj %></td>
+            <td>
+              <% if empresa.certificado_digital.present? %>
+                <span class="sd-badge">Cadastrado</span>
+              <% else %>
+                <span class="sd-field-hint">Não cadastrado</span>
+              <% end %>
+            </td>
+            <td>
+              <% if empresa.homologacao? %>
+                <span class="sd-badge" style="background:#fffbeb;color:#92400e;border-color:#fcd34d;">Homologação</span>
+              <% else %>
+                <span class="sd-field-hint">Produção</span>
+              <% end %>
+            </td>
+            <td><%= link_to "Editar", edit_empresa_path(empresa) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <div class="sd-alert sd-alert--info">
+      <span class="sd-alert__icon">ℹ</span>
+      <div><strong>Nenhuma empresa cadastrada.</strong></div>
+    </div>
+  <% end %>
+</div>

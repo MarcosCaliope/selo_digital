@@ -1,0 +1,115 @@
+<%= form_with model: empresa, local: true, html: { multipart: true, class: "sd-form" } do |f| %>
+  <% if empresa.errors.any? %>
+    <div class="sd-errors">
+      <strong><%= pluralize(empresa.errors.count, "erro") %> impediram o salvamento:</strong>
+      <ul>
+        <% empresa.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="sd-form-grid">
+    <div class="sd-field sd-field--full">
+      <%= f.label :snomeempresa, "Razão social" %>
+      <%= f.text_field :snomeempresa %>
+    </div>
+
+    <div class="sd-field">
+      <%= f.label :sfantasia, "Nome fantasia" %>
+      <%= f.text_field :sfantasia %>
+    </div>
+
+    <div class="sd-field">
+      <%= f.label :snocnpj, "CNPJ" %>
+      <%= f.text_field :snocnpj %>
+    </div>
+
+    <div class="sd-field sd-field--full">
+      <%= f.label :sendereco, "Endereço" %>
+      <%= f.text_field :sendereco %>
+    </div>
+
+    <div class="sd-field">
+      <%= f.label :sbairro, "Bairro" %>
+      <%= f.text_field :sbairro %>
+    </div>
+
+    <div class="sd-field">
+      <%= f.label :scidade, "Cidade" %>
+      <%= f.text_field :scidade %>
+    </div>
+
+    <div class="sd-field">
+      <%= f.label :sestado, "UF" %>
+      <%= f.text_field :sestado, maxlength: 2 %>
+    </div>
+
+    <div class="sd-field">
+      <%= f.label :scep, "CEP" %>
+      <%= f.text_field :scep %>
+    </div>
+
+    <div class="sd-field">
+      <%= f.label :sfone1, "Telefone" %>
+      <%= f.text_field :sfone1 %>
+    </div>
+
+    <div class="sd-field">
+      <%= f.label :semail, "E-mail" %>
+      <%= f.email_field :semail %>
+    </div>
+
+    <div class="sd-field">
+      <%= f.label :snomeresponsavel, "Responsável" %>
+      <%= f.text_field :snomeresponsavel %>
+    </div>
+
+    <div class="sd-field">
+      <%= f.label :snocpfresponsavel, "CPF do responsável" %>
+      <%= f.text_field :snocpfresponsavel %>
+    </div>
+  </div>
+
+  <div class="sd-form-grid">
+    <div class="sd-field">
+      <%= f.label :codigo_serventia, "Código da serventia (TJCE)" %>
+      <%= f.text_field :codigo_serventia %>
+      <span class="sd-field-hint">Usado no cabeçalho da consulta ao webservice do TJCE.</span>
+    </div>
+
+    <div class="sd-field">
+      <label>
+        <%= f.check_box :homologacao %>
+        Usar ambiente de homologação do TJCE
+      </label>
+      <span class="sd-field-hint">Marque para testar contra o ambiente de homologação em vez de produção. O certificado precisa estar cadastrado pelo TJCE também nessa base.</span>
+    </div>
+  </div>
+
+  <div class="sd-form-grid">
+    <div class="sd-field">
+      <%= f.label :certificado_digital_upload, "Certificado digital (.pfx)" %>
+      <%= f.file_field :certificado_digital_upload, accept: ".pfx,.p12" %>
+      <% if empresa.certificado_digital.present? %>
+        <span class="sd-field-hint">Já existe um certificado cadastrado. Envie um novo arquivo para substituí-lo.</span>
+      <% else %>
+        <span class="sd-field-hint">Usado na conexão mTLS com o webservice do TJCE.</span>
+      <% end %>
+    </div>
+
+    <div class="sd-field">
+      <%= f.label :senha_certificado_digital, "Senha do certificado" %>
+      <%= f.password_field :senha_certificado_digital, value: nil, autocomplete: "new-password" %>
+      <% if empresa.senha_certificado_digital.present? %>
+        <span class="sd-field-hint">Deixe em branco para manter a senha atual.</span>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="sd-form-actions">
+    <%= f.submit empresa.persisted? ? "Salvar alterações" : "Cadastrar empresa", class: "sd-btn" %>
+    <%= link_to "Cancelar", empresa.persisted? ? empresa : empresas_path, class: "sd-btn sd-btn--secondary" %>
+  </div>
+<% end %>

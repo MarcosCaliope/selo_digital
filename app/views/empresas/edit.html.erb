@@ -1,0 +1,13 @@
+<% content_for :title, "Editar #{@empresa.snomeempresa} — Selo Digital" %>
+
+<div class="sd-container">
+  <div class="sd-header">
+    <div>
+      <h1>Editar empresa</h1>
+    </div>
+    <%= button_to "Remover", @empresa, method: :delete, class: "sd-btn sd-btn--danger",
+        form: { data: { turbo_confirm: "Remover #{@empresa.snomeempresa}? Essa ação não pode ser desfeita." } } %>
+  </div>
+
+  <%= render "form", empresa: @empresa %>
+</div>

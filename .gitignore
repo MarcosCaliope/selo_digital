@@ -35,3 +35,8 @@
 
 # Ignore extracted client certificates (private keys)
 /certs/
+
+# The siscartd database is a shared legacy DB (30+ tables not owned by this
+# app). db:migrate dumps the *entire* current DB into schema.rb, not just the
+# tables this app manages — don't commit that snapshot of someone else's schema.
+/db/schema.rb

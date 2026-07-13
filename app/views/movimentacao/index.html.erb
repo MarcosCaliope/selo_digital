@@ -1,0 +1,142 @@
+<% content_for :title, "Movimentação de Atos — Selo Digital" %>
+
+<div class="sd-container" style="max-width: 1200px;">
+  <div class="sd-header">
+    <div>
+      <h1>Movimentação de Atos</h1>
+      <p class="sd-subtitle">Fila de envio, lotes, estoque local e solicitações de selo</p>
+    </div>
+    <div style="display: flex; gap: 0.6rem;">
+      <%= link_to "Selos", selos_path, class: "sd-btn sd-btn--secondary" %>
+      <%= link_to "Empresas", empresas_path, class: "sd-btn sd-btn--secondary" %>
+      <%= link_to "Atualizar", movimentacao_path, class: "sd-btn" %>
+    </div>
+  </div>
+
+  <div class="sd-dashboard-grid">
+    <div>
+      <div class="sd-panel">
+        <div class="sd-panel-header">
+          <span>Atos aguardando envio</span>
+          <span class="sd-field-hint"><%= @atos_pendentes.size %></span>
+        </div>
+        <% if @atos_pendentes.any? %>
+          <table class="sd-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Selo</th>
+                <th>Tempo</th>
+                <th>Cód. ato</th>
+                <th>Tipo selo</th>
+                <th>Protocolo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @atos_pendentes.each do |ato| %>
+                <tr>
+                  <td><%= ato.id %></td>
+                  <td><%= ato.selo %></td>
+                  <td><%= ato.minutos_pendente %> min</td>
+                  <td><%= ato.codigo_ato %></td>
+                  <td><span class="sd-badge">Tipo <%= ato.tipo_selo %></span></td>
+                  <td><%= ato.id_ato.to_i %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="sd-panel-empty">Nenhum ato aguardando envio.</p>
+        <% end %>
+      </div>
+
+      <div class="sd-panel">
+        <div class="sd-panel-header">
+          <span>Lotes emitidos hoje</span>
+          <span class="sd-field-hint"><%= @lotes.size %></span>
+        </div>
+        <% if @lotes.any? %>
+          <table class="sd-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Emissão</th>
+                <th>Retorno</th>
+                <th>Resposta</th>
+                <th>Títulos</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @lotes.each do |lote| %>
+                <tr>
+                  <td><%= lote.id %></td>
+                  <td><%= l(lote.data_emissao, format: :short) if lote.data_emissao %></td>
+                  <td><%= l(lote.data_resposta, format: :short) if lote.data_resposta %></td>
+                  <td><%= lote.resposta %></td>
+                  <td><%= lote.qte_titulos %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="sd-panel-empty">Nenhum lote emitido hoje.</p>
+        <% end %>
+      </div>
+    </div>
+
+    <div>
+      <div class="sd-panel">
+        <div class="sd-panel-header">
+          <span>Estoque local de selos</span>
+        </div>
+        <table class="sd-table">
+          <thead>
+            <tr>
+              <th>Tipo selo</th>
+              <th>Estoque</th>
+              <th>Mínimo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @tipos_selo.each do |tipo| %>
+              <tr>
+                <td><%= tipo.descricao.presence || "Tipo #{tipo.codigo_tipo}" %></td>
+                <td class="sd-num <%= "sd-text-danger" if tipo.abaixo_do_minimo? %>"><%= tipo.estoque_atual %></td>
+                <td class="sd-num"><%= tipo.estoque_min %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sd-panel">
+        <div class="sd-panel-header">
+          <span>Solicitações pendentes de recebimento</span>
+          <span class="sd-field-hint"><%= @solicitacoes.size %></span>
+        </div>
+        <% if @solicitacoes.any? %>
+          <table class="sd-table">
+            <thead>
+              <tr>
+                <th>Chave</th>
+                <th>Tipo selo</th>
+                <th>Data</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @solicitacoes.each do |sol| %>
+                <tr>
+                  <td><%= sol.chave %></td>
+                  <td><span class="sd-badge">Tipo <%= sol.codigo_tipo %></span></td>
+                  <td><%= l(sol.data, format: :short) if sol.data %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="sd-panel-empty">Nenhuma solicitação pendente.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

@@ -10,18 +10,23 @@ module SeloDigital
     NAMESPACE_SCHEMA = "http://www.tjce.jus.br/selodigital/schemas"
     NAMESPACE_DS     = "http://www.w3.org/2000/09/xmldsig#"
 
-    # Aceita PFX (pfx_path + pfx_password) ou cert/key extraídos (cert_path + key_path).
+    # Aceita PFX via caminho (pfx_path), conteúdo binário já em memória (pfx_content)
+    # ou cert/key extraídos (cert_path + key_path).
     # homologacao: false = endpoint de produção (padrão), true = endpoint de homologação.
     # ambiente: valor enviado no cabeçalho SOAP (1 para produção e homologação do TJCE).
     def initialize(codigo_serventia:, versao: "1.12", ambiente: 1, homologacao: false,
-                   pfx_path: nil, pfx_password: nil,
+                   pfx_path: nil, pfx_content: nil, pfx_password: nil,
                    cert_path: nil, key_path: nil)
       @codigo_serventia = codigo_serventia
       @versao           = versao
       @ambiente         = ambiente
       @endpoint         = homologacao ? ENDPOINT_HOMOLOGACAO : ENDPOINT_PRODUCAO
 
-      if pfx_path
+      if pfx_content
+        pkcs12 = OpenSSL::PKCS12.new(pfx_content, pfx_password)
+        @cert  = pkcs12.certificate
+        @key   = pkcs12.key
+      elsif pfx_path
         pkcs12 = OpenSSL::PKCS12.new(File.binread(pfx_path), pfx_password)
         @cert  = pkcs12.certificate
         @key   = pkcs12.key
@@ -115,5 +120,4 @@ module SeloDigital
       result
     end
   end
-
 end

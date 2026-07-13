@@ -145,6 +145,54 @@ body {
   color: #6b7280;
 }
 
+/* Form */
+.sd-form { background: #fff; border-radius: 10px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.sd-form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem 1.25rem; }
+.sd-field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; }
+.sd-field--full { grid-column: 1 / -1; }
+.sd-field label { font-size: 0.8rem; font-weight: 600; color: #374151; }
+.sd-field input {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+.sd-field input:focus { outline: none; border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,.15); }
+.sd-field input[type="checkbox"] { border: none; padding: 0; width: auto; margin-right: 0.4rem; }
+.sd-field label:has(input[type="checkbox"]) { display: flex; align-items: center; font-weight: 500; }
+.sd-field-hint { font-size: 0.78rem; color: #6b7280; }
+.sd-form-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+.sd-btn--secondary { background: #e5e7eb; color: #1a1a2e; }
+.sd-btn--secondary:hover { background: #d1d5db; }
+.sd-btn--danger { background: #dc2626; }
+.sd-btn--danger:hover { background: #b91c1c; }
+.sd-errors { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; font-size: 0.9rem; }
+.sd-errors ul { margin-left: 1.1rem; margin-top: 0.3rem; }
+
+/* Dashboard panels */
+.sd-dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: start; }
+.sd-panel { background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; }
+.sd-panel + .sd-panel { margin-top: 1.25rem; }
+.sd-panel-header {
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  border-bottom: 1px solid #f0f0f0;
+  background: #f8faff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sd-panel-empty { padding: 1rem; font-size: 0.85rem; color: #6b7280; }
+.sd-panel .sd-table { box-shadow: none; border-radius: 0; }
+.sd-panel .sd-table th, .sd-panel .sd-table td { padding: 0.55rem 0.85rem; font-size: 0.85rem; }
+.sd-text-danger { color: #dc2626; font-weight: 700; }
+@media (max-width: 900px) {
+  .sd-dashboard-grid { grid-template-columns: 1fr; }
+}
+
 /* Timestamp */
 .sd-timestamp {
   margin-top: 0.9rem;

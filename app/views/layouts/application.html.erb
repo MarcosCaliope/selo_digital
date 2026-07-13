@@ -23,6 +23,16 @@
   </head>
 
   <body>
+    <% if notice %>
+      <div class="sd-container" style="margin-bottom: -1.75rem;">
+        <div class="sd-alert sd-alert--info"><span class="sd-alert__icon">✓</span><div><%= notice %></div></div>
+      </div>
+    <% end %>
+    <% if alert %>
+      <div class="sd-container" style="margin-bottom: -1.75rem;">
+        <div class="sd-alert sd-alert--error"><span class="sd-alert__icon">✕</span><div><%= alert %></div></div>
+      </div>
+    <% end %>
     <%= yield %>
   </body>
 </html>

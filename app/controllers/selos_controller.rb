@@ -1,11 +1,18 @@
 class SelosController < ApplicationController
   def index
-    creds = Rails.application.credentials.selo_digital!
+    empresa = Empresa.first
+    raise SeloDigital::Error, "Nenhuma empresa cadastrada." if empresa.nil?
+
+    @homologacao = empresa.homologacao
+
+    raise SeloDigital::Error, "Certificado digital não cadastrado para #{empresa.snomeempresa}." if empresa.certificado_digital.blank?
+    raise SeloDigital::Error, "Código da serventia não cadastrado para #{empresa.snomeempresa}." if empresa.codigo_serventia.blank?
 
     client = SeloDigital::Client.new(
-      pfx_path:         Rails.root.join(creds[:pfx_path]).to_s,
-      pfx_password:     creds[:pfx_password],
-      codigo_serventia: creds[:codigo_serventia],
+      pfx_content:      Base64.decode64(empresa.certificado_digital),
+      pfx_password:     empresa.senha_certificado_digital,
+      codigo_serventia: empresa.codigo_serventia,
+      homologacao:      empresa.homologacao,
       versao:           "1.12"
     )
 

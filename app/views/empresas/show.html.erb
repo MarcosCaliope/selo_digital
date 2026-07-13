@@ -1,0 +1,40 @@
+<% content_for :title, "#{@empresa.snomeempresa} — Selo Digital" %>
+
+<div class="sd-container">
+  <div class="sd-header">
+    <div>
+      <h1><%= @empresa.snomeempresa %></h1>
+      <p class="sd-subtitle"><%= @empresa.sfantasia %></p>
+    </div>
+    <%= link_to "Editar", edit_empresa_path(@empresa), class: "sd-btn" %>
+  </div>
+
+  <div class="sd-form">
+    <div class="sd-form-grid">
+      <div class="sd-field"><label>CNPJ</label><span><%= @empresa.snocnpj.presence || "—" %></span></div>
+      <div class="sd-field"><label>Telefone</label><span><%= @empresa.sfone1.presence || "—" %></span></div>
+      <div class="sd-field sd-field--full"><label>Endereço</label><span><%= [@empresa.sendereco, @empresa.sbairro, @empresa.scidade, @empresa.sestado].reject(&:blank?).join(", ").presence || "—" %></span></div>
+      <div class="sd-field"><label>Responsável</label><span><%= @empresa.snomeresponsavel.presence || "—" %></span></div>
+      <div class="sd-field"><label>E-mail</label><span><%= @empresa.semail.presence || "—" %></span></div>
+      <div class="sd-field"><label>Código da serventia</label><span><%= @empresa.codigo_serventia.presence || "—" %></span></div>
+      <div class="sd-field">
+        <label>Ambiente TJCE</label>
+        <% if @empresa.homologacao? %>
+          <span class="sd-badge" style="background:#fffbeb;color:#92400e;border-color:#fcd34d;">Homologação</span>
+        <% else %>
+          <span class="sd-badge">Produção</span>
+        <% end %>
+      </div>
+      <div class="sd-field">
+        <label>Certificado digital</label>
+        <% if @empresa.certificado_digital.present? %>
+          <span class="sd-badge">Cadastrado</span>
+        <% else %>
+          <span class="sd-field-hint">Não cadastrado</span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <p class="sd-timestamp"><%= link_to "← Voltar", empresas_path %></p>
+</div>

@@ -21,7 +21,12 @@ module SeloDigital
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # siscartd is a Ceará (TJCE) system; "timestamp without time zone" columns like
+    # sd_atosPraticados.data_registro are written in local Brazil time (UTC-3, no DST)
+    # by external processes, not UTC. default_timezone: :local makes ActiveRecord
+    # interpret those naive timestamps correctly instead of mislabeling them UTC.
+    config.time_zone = "Brasilia"
+    config.active_record.default_timezone = :local
     # config.eager_load_paths << Rails.root.join("extras")
   end
 end
