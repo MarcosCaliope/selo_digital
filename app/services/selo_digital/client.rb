@@ -187,12 +187,23 @@ module SeloDigital
       XML
     end
 
+    # Combina a data (dataAtoPraticado/dataAtoSolicitacao, colunas date puras em
+    # sd_atosPraticados) com o horário de tempo (a única coluna de horário do
+    # ato) para formar o dateTime exigido pelo TJCE — em vez de usar o horário
+    # do envio, que não reflete quando o ato foi de fato praticado/solicitado.
+    def data_hora_ato(data, tempo)
+      return Time.current.strftime("%Y-%m-%dT%H:%M:%S") if data.blank?
+
+      hora = tempo.present? ? tempo.strftime("%H:%M:%S") : "00:00:00"
+      "#{data.strftime("%Y-%m-%d")}T#{hora}"
+    end
+
     def ato_xml(ato)
       <<~XML
         <atos xsi:type="ns3:CGenerica">
           <idAto>#{ato.id}</idAto>
-          <dataAtoPraticado>#{Time.current.strftime("%Y-%m-%dT%H:%M:%S")}</dataAtoPraticado>
-          <dataAtoSolicitacao>#{Time.current.strftime("%Y-%m-%dT%H:%M:%S")}</dataAtoSolicitacao>
+          <dataAtoPraticado>#{data_hora_ato(ato.dataAtoPraticado, ato.tempo)}</dataAtoPraticado>
+          <dataAtoSolicitacao>#{data_hora_ato(ato.dataAtoSolicitacao, ato.tempo)}</dataAtoSolicitacao>
           <valorDocumento>#{ato.valorDocumento}</valorDocumento>
           <valorEmolumento>#{ato.valorEmolumento}</valorEmolumento>
           <valorFermoju>#{ato.valorFermoju}</valorFermoju>
