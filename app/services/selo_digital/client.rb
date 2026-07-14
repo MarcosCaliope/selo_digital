@@ -5,22 +5,46 @@ module SeloDigital
   class Client
     ENDPOINT_HOMOLOGACAO = "https://homologacao-selodigital.tjce.jus.br/wsselodigital-homologacao/SelosDisponiveis"
     ENDPOINT_PRODUCAO    = "https://selodigital.tjce.jus.br/wsselodigital/SelosDisponiveis"
-    NAMESPACE_SD     = "http://service.selosdisponiveis.selodigital.tjce.jus.br/"
+
+    ENDPOINT_SOLICITACAO_HOMOLOGACAO  = "https://homologacao-selodigital.tjce.jus.br/wsselodigital-homologacao/SolicitacaoSelo"
+    ENDPOINT_SOLICITACAO_PRODUCAO     = "https://selodigital.tjce.jus.br/wsselodigital/SolicitacaoSelo"
+    ENDPOINT_RECEBIMENTO_HOMOLOGACAO  = "https://homologacao-selodigital.tjce.jus.br/wsselodigital-homologacao/ReceberSelos"
+    ENDPOINT_RECEBIMENTO_PRODUCAO     = "https://selodigital.tjce.jus.br/wsselodigital/ReceberSelos"
+    ENDPOINT_MOVIMENTACAO_HOMOLOGACAO = "https://homologacao-selodigital.tjce.jus.br/wsselodigital-homologacao/MovimentarAtos"
+    ENDPOINT_MOVIMENTACAO_PRODUCAO    = "https://selodigital.tjce.jus.br/wsselodigital/MovimentarAtos"
+
+    NAMESPACE_SD           = "http://service.selosdisponiveis.selodigital.tjce.jus.br/"
+    NAMESPACE_SOLICITACAO  = "http://service.solicitacao.selodigital.tjce.jus.br/"
+    NAMESPACE_RECEBIMENTO  = "http://service.recebimento.selodigital.tjce.jus.br/"
+    NAMESPACE_MOVIMENTACAO = "http://service.movimentacao.selodigital.tjce.jus.br/"
     NAMESPACE_ENV    = "http://schemas.xmlsoap.org/soap/envelope/"
     NAMESPACE_SCHEMA = "http://www.tjce.jus.br/selodigital/schemas"
     NAMESPACE_DS     = "http://www.w3.org/2000/09/xmldsig#"
+    NAMESPACE_XSI    = "http://www.w3.org/2001/XMLSchema-instance"
 
     # Aceita PFX via caminho (pfx_path), conteúdo binário já em memória (pfx_content)
     # ou cert/key extraídos (cert_path + key_path).
     # homologacao: false = endpoint de produção (padrão), true = endpoint de homologação.
     # ambiente: valor enviado no cabeçalho SOAP (1 para produção e homologação do TJCE).
+    #
+    # informante_cpf/solicitante_*: usados apenas por solicita_selos e movimentar_atos
+    # (não são necessários para consulta_selos_disponiveis nem receber_selos).
     def initialize(codigo_serventia:, versao: "1.12", ambiente: 1, homologacao: false,
                    pfx_path: nil, pfx_content: nil, pfx_password: nil,
-                   cert_path: nil, key_path: nil)
+                   cert_path: nil, key_path: nil,
+                   informante_cpf: nil, solicitante_nome: nil,
+                   solicitante_ddd: nil, solicitante_telefone: nil, solicitante_email: nil)
       @codigo_serventia = codigo_serventia
       @versao           = versao
       @ambiente         = ambiente
+      @homologacao      = homologacao
       @endpoint         = homologacao ? ENDPOINT_HOMOLOGACAO : ENDPOINT_PRODUCAO
+
+      @informante_cpf       = informante_cpf
+      @solicitante_nome     = solicitante_nome
+      @solicitante_ddd      = solicitante_ddd
+      @solicitante_telefone = solicitante_telefone
+      @solicitante_email    = solicitante_email
 
       if pfx_content
         pkcs12 = OpenSSL::PKCS12.new(pfx_content, pfx_password)
@@ -53,11 +77,168 @@ module SeloDigital
           </sd:consultaSelosDisponiveis>
         XML
       )
-      response_xml = post(xml)
+      response_xml = post(@endpoint, xml)
       parse_selos_disponiveis(response_xml)
     end
 
+    # Solicita mais selos de um tipo ao TJCE. Retorna a "chave" usada depois em
+    # receber_selos para efetivamente baixar os números de série.
+    #
+    # id_solicitacao: identificador local do pedido (ex: próximo id de sd_solicitacoes),
+    # enviado ao TJCE como referência — não é o mesmo que a chave retornada por ele.
+    def solicita_selos(codigo_tipo_selo:, quantidade:, id_solicitacao:)
+      corpo = <<~XML
+        <arg0>
+          #{cabecalho}
+          <solicitante>
+            <nomePessoa>#{@solicitante_nome}</nomePessoa>
+            <documento>
+              <tipoDocumento>1</tipoDocumento>
+              <numero>#{@informante_cpf}</numero>
+              <descricao>CPF</descricao>
+              <orgaoEmissor></orgaoEmissor>
+              <dataEmissao>#{Date.current.iso8601}</dataEmissao>
+            </documento>
+            <telefone>
+              <tipoTelefone>1</tipoTelefone>
+              <ddd>#{@solicitante_ddd}</ddd>
+              <numero>#{@solicitante_telefone}</numero>
+            </telefone>
+            <email>
+              <tipoEmail>1</tipoEmail>
+              <enderecoEmail>#{@solicitante_email}</enderecoEmail>
+            </email>
+          </solicitante>
+          <idSolicitacaoSelo>#{id_solicitacao}</idSolicitacaoSelo>
+          <itens>
+            <itemSolicitacao>
+              <sequencial>1</sequencial>
+              <codigoSelo>
+                <codigo>#{codigo_tipo_selo}</codigo>
+              </codigoSelo>
+              <quantidade>#{quantidade}</quantidade>
+            </itemSolicitacao>
+          </itens>
+        </arg0>
+      XML
+      xml = envelope(NAMESPACE_SOLICITACAO, "solicitaSelos", corpo)
+      endpoint = @homologacao ? ENDPOINT_SOLICITACAO_HOMOLOGACAO : ENDPOINT_SOLICITACAO_PRODUCAO
+      parse_solicita_selos(post(endpoint, xml))
+    end
+
+    # Usa a "chave" de uma solicitação já aceita pelo TJCE para efetivamente baixar
+    # os números de série dos selos. Retorna um array de
+    # { numero_serie:, validador:, codigo_selo: }.
+    def receber_selos(chave:)
+      corpo = <<~XML
+        <arg0>
+          #{cabecalho}
+          <chave>#{chave}</chave>
+        </arg0>
+      XML
+      xml = envelope(NAMESPACE_RECEBIMENTO, "receberSelos", corpo)
+      endpoint = @homologacao ? ENDPOINT_RECEBIMENTO_HOMOLOGACAO : ENDPOINT_RECEBIMENTO_PRODUCAO
+      parse_receber_selos(post(endpoint, xml))
+    end
+
+    # Submete um lote de atos praticados ao TJCE, consumindo o selo já reservado
+    # localmente para cada um. `atos` é uma lista de objetos respondendo a: id,
+    # codigo_ato, tipo_selo, numero_selo, validador, valorSelo, numeroTalao,
+    # tipoCobranca, tipoGeracao, tipoMovimentacao, quantidadeExtra,
+    # valorDocumento, valorEmolumento, valorFermoju (AtoPraticado já responde a
+    # tudo isso — os nomes camelCase vêm das colunas reais de sd_atosPraticados).
+    #
+    # Retorna um array de { id_ato:, sq_ato_tj:, status_ato_tj: } na ordem de resposta
+    # do TJCE — id_ato corresponde ao `id` passado em cada ato.
+    #
+    # NOTA: o bloco <partePessoa> replica o placeholder genérico ("Generico"/dados
+    # fictícios) que o PHP legado já envia em produção — não temos confirmação de que
+    # o TJCE valida esse bloco de fato. Ver CLAUDE.md antes de usar isso em produção.
+    def movimentar_atos(atos:)
+      corpo = <<~XML
+        <arg0>
+          #{cabecalho}
+          <informante>#{@informante_cpf}</informante>
+          #{atos.map { |ato| ato_xml(ato) }.join}
+        </arg0>
+      XML
+      xml = envelope(
+        NAMESPACE_MOVIMENTACAO,
+        "movimentarAtos",
+        corpo,
+        extra_xmlns: %( xmlns:xsi="#{NAMESPACE_XSI}" xmlns:ns3="#{NAMESPACE_SCHEMA}")
+      )
+      endpoint = @homologacao ? ENDPOINT_MOVIMENTACAO_HOMOLOGACAO : ENDPOINT_MOVIMENTACAO_PRODUCAO
+      parse_movimentar_atos(post(endpoint, xml))
+    end
+
     private
+
+    def cabecalho
+      <<~XML
+        <cabecalho>
+          <versao>#{@versao}</versao>
+          <dataHora>#{Time.current.strftime("%Y-%m-%dT%H:%M:%S")}</dataHora>
+          <ambiente>#{@ambiente}</ambiente>
+          <serventia>
+            <codigoServentia>#{@codigo_serventia}</codigoServentia>
+          </serventia>
+        </cabecalho>
+      XML
+    end
+
+    def ato_xml(ato)
+      <<~XML
+        <atos xsi:type="ns3:CGenerica">
+          <idAto>#{ato.id}</idAto>
+          <dataAtoPraticado>#{Time.current.strftime("%Y-%m-%dT%H:%M:%S")}</dataAtoPraticado>
+          <dataAtoSolicitacao>#{Time.current.strftime("%Y-%m-%dT%H:%M:%S")}</dataAtoSolicitacao>
+          <valorDocumento>#{ato.valorDocumento}</valorDocumento>
+          <valorEmolumento>#{ato.valorEmolumento}</valorEmolumento>
+          <valorFermoju>#{ato.valorFermoju}</valorFermoju>
+          <valorEmolumentoLivre>0</valorEmolumentoLivre>
+          <numeroTalao>#{ato.numeroTalao}</numeroTalao>
+          <tipoCobranca>#{ato.tipoCobranca}</tipoCobranca>
+          <tipoGeracao>#{ato.tipoGeracao}</tipoGeracao>
+          <tipoMovimentacao>#{ato.tipoMovimentacao}</tipoMovimentacao>
+          <responsavel>#{@informante_cpf}</responsavel>
+          <quantidadeExtra>#{ato.quantidadeExtra}</quantidadeExtra>
+          <codigoAto>#{ato.codigo_ato}</codigoAto>
+          <selo>
+            <codigoSelo>
+              <codigo>#{ato.tipo_selo}</codigo>
+            </codigoSelo>
+            <numeroSerie>#{ato.numero_selo.to_s.strip}</numeroSerie>
+            <validador>#{ato.validador.to_s.strip}</validador>
+            <valor>#{ato.valorSelo}</valor>
+          </selo>
+          <partePessoa>
+            <ordem>1</ordem>
+            <tipoParte>1</tipoParte>
+            <pessoa>
+              <nomePessoa>Generico</nomePessoa>
+              <endereco>
+                <tipoEndereco>1</tipoEndereco>
+                <descricaoLogradouro>rua</descricaoLogradouro>
+                <numero>10</numero>
+                <bairro>Todos</bairro>
+                <cidade>2304400</cidade>
+                <uf>23</uf>
+                <cep>61522080</cep>
+              </endereco>
+              <documento>
+                <tipoDocumento>1</tipoDocumento>
+                <numero>0123456789</numero>
+                <descricao>Doc Teste</descricao>
+                <orgaoEmissor>SSP</orgaoEmissor>
+                <dataEmissao>2017-01-01T10:00:00</dataEmissao>
+              </documento>
+            </pessoa>
+          </partePessoa>
+          <observacoes></observacoes>
+        </atos>
+      XML
+    end
 
     def build_envelope(body)
       <<~XML
@@ -73,12 +254,30 @@ module SeloDigital
       XML
     end
 
-    def post(xml)
+    # Igual a build_envelope, mas genérico para as operações com namespace "ser:"
+    # próprio e (no caso de movimentarAtos) declarações xmlns extras no Envelope.
+    def envelope(namespace, operation, body, extra_xmlns: nil)
+      <<~XML
+        <?xml version="1.0" encoding="UTF-8"?>
+        <soapenv:Envelope xmlns:soapenv="#{NAMESPACE_ENV}"
+          xmlns:ser="#{namespace}"
+          xmlns:xd="#{NAMESPACE_DS}"#{extra_xmlns}>
+          <soapenv:Header/>
+          <soapenv:Body>
+            <ser:#{operation}>
+              #{body.strip}
+            </ser:#{operation}>
+          </soapenv:Body>
+        </soapenv:Envelope>
+      XML
+    end
+
+    def post(url, xml)
       log_dir = Rails.root.join("log/soap")
       FileUtils.mkdir_p(log_dir)
       File.write(log_dir.join("request_#{Time.current.strftime("%Y%m%d_%H%M%S")}.xml"), xml)
 
-      uri  = URI.parse(@endpoint)
+      uri  = URI.parse(url)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl     = true
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE
@@ -118,6 +317,73 @@ module SeloDigital
       end
 
       result
+    end
+
+    def parse_solicita_selos(xml)
+      raise SeloDigital::Error, "Resposta vazia do servidor" if xml.blank?
+
+      doc = Nokogiri::XML(xml)
+      doc.remove_namespaces!
+
+      # A resposta do TJCE para essa operação não segue o mesmo formato
+      # codigoRetorno > codigo/status/mensagem das outras — busca direta no
+      # documento inteiro, replicando o que o PHP legado faz (AUTOsolicitar_selos.php).
+      {
+        codigo:    doc.at_xpath("//codigo")&.text,
+        mensagem:  doc.at_xpath("//mensagem")&.text,
+        chave:     doc.at_xpath("//chave")&.text,
+        data_hora: doc.at_xpath("//dataHora")&.text
+      }
+    end
+
+    def parse_receber_selos(xml)
+      doc = Nokogiri::XML(xml)
+      doc.remove_namespaces!
+
+      ret = doc.at_xpath("//return")
+      raise SeloDigital::Error, "Resposta vazia do servidor" unless ret
+
+      retorno = ret.at_xpath("codigoRetorno")
+      result  = {
+        codigo:   retorno&.at_xpath("codigo")&.text,
+        status:   retorno&.at_xpath("status")&.text&.to_i,
+        mensagem: retorno&.at_xpath("mensagem")&.text,
+        selos:    []
+      }
+
+      ret.xpath("seloRecebimento").each do |s|
+        result[:selos] << {
+          numero_serie: s.at_xpath("numeroSerie")&.text&.strip,
+          validador:    s.at_xpath("validador")&.text&.strip,
+          codigo_selo:  s.at_xpath("codigoSelo/codigo")&.text&.to_i
+        }
+      end
+
+      result
+    end
+
+    def parse_movimentar_atos(xml)
+      doc = Nokogiri::XML(xml)
+      doc.remove_namespaces!
+
+      itens = []
+      doc.xpath("//itensLote").each do |item|
+        if item.at_xpath("statusFalha")
+          itens << {
+            id_ato:        item.at_xpath("idAto")&.text&.to_i,
+            sq_ato_tj:     item.at_xpath("statusFalha/codigo")&.text,
+            status_ato_tj: item.at_xpath("statusFalha/status")&.text
+          }
+        else
+          itens << {
+            id_ato:        item.at_xpath("idAto")&.text&.to_i,
+            sq_ato_tj:     item.at_xpath("sqAto")&.text,
+            status_ato_tj: item.at_xpath("statusAto")&.text
+          }
+        end
+      end
+
+      itens
     end
   end
 end

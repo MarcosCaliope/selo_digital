@@ -21,30 +21,38 @@
           <span class="sd-field-hint"><%= @atos_pendentes.size %></span>
         </div>
         <% if @atos_pendentes.any? %>
-          <table class="sd-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Selo</th>
-                <th>Tempo</th>
-                <th>Cód. ato</th>
-                <th>Tipo selo</th>
-                <th>Protocolo</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% @atos_pendentes.each do |ato| %>
+          <%= form_with url: enviar_atos_movimentacao_path, method: :post,
+              data: { turbo_confirm: "Enviar os atos selecionados ao TJCE? Isso consome selo e registra o ato de verdade — não é reversível." } do %>
+            <table class="sd-table">
+              <thead>
                 <tr>
-                  <td><%= ato.id %></td>
-                  <td><%= ato.selo %></td>
-                  <td><%= ato.minutos_pendente %> min</td>
-                  <td><%= ato.codigo_ato %></td>
-                  <td><span class="sd-badge">Tipo <%= ato.tipo_selo %></span></td>
-                  <td><%= ato.id_ato.to_i %></td>
+                  <th></th>
+                  <th>ID</th>
+                  <th>Selo</th>
+                  <th>Tempo</th>
+                  <th>Cód. ato</th>
+                  <th>Tipo selo</th>
+                  <th>Protocolo</th>
                 </tr>
-              <% end %>
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                <% @atos_pendentes.each do |ato| %>
+                  <tr>
+                    <td><input type="checkbox" name="ato_ids[]" value="<%= ato.id %>"></td>
+                    <td><%= ato.id %></td>
+                    <td><%= ato.selo %></td>
+                    <td><%= ato.minutos_pendente %> min</td>
+                    <td><%= ato.codigo_ato %></td>
+                    <td><span class="sd-badge">Tipo <%= ato.tipo_selo %></span></td>
+                    <td><%= ato.id_ato.to_i %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+            <div style="padding: 0.75rem 1rem;">
+              <%= submit_tag "Enviar selecionados ao TJCE", class: "sd-btn" %>
+            </div>
+          <% end %>
         <% else %>
           <p class="sd-panel-empty">Nenhum ato aguardando envio.</p>
         <% end %>
@@ -95,6 +103,7 @@
               <th>Tipo selo</th>
               <th>Estoque</th>
               <th>Mínimo</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -103,6 +112,13 @@
                 <td><%= tipo.descricao.presence || "Tipo #{tipo.codigo_tipo}" %></td>
                 <td class="sd-num <%= "sd-text-danger" if tipo.abaixo_do_minimo? %>"><%= tipo.estoque_atual %></td>
                 <td class="sd-num"><%= tipo.estoque_min %></td>
+                <td>
+                  <% if tipo.qte_pedido.to_i > 0 && tipo.abaixo_do_minimo? %>
+                    <%= button_to "Solicitar #{tipo.qte_pedido}", solicitar_selos_movimentacao_path(codigo_tipo: tipo.codigo_tipo),
+                        class: "sd-btn sd-btn--secondary",
+                        form: { data: { turbo_confirm: "Solicitar #{tipo.qte_pedido} selo(s) do Tipo #{tipo.codigo_tipo} ao TJCE?" } } %>
+                  <% end %>
+                </td>
               </tr>
             <% end %>
           </tbody>
@@ -121,6 +137,7 @@
                 <th>Chave</th>
                 <th>Tipo selo</th>
                 <th>Data</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -129,6 +146,11 @@
                   <td><%= sol.chave %></td>
                   <td><span class="sd-badge">Tipo <%= sol.codigo_tipo %></span></td>
                   <td><%= l(sol.data, format: :short) if sol.data %></td>
+                  <td>
+                    <%= button_to "Receber", receber_selos_movimentacao_path(sol),
+                        class: "sd-btn sd-btn--secondary",
+                        form: { data: { turbo_confirm: "Tentar receber os selos da chave #{sol.chave}?" } } %>
+                  </td>
                 </tr>
               <% end %>
             </tbody>
