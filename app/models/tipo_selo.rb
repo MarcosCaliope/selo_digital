@@ -37,30 +37,36 @@ class TipoSelo < ApplicationRecord
   #
   # Só permite solicitar quando o estoque local está abaixo do mínimo configurado
   # — não é pra pedir selo "à toa", só quando realmente falta.
+  #
+  # A Solicitacao é criada (sem chave) antes de chamar o TJCE para que o id
+  # enviado como idSolicitacaoSelo seja o id real atribuído pelo Postgres —
+  # calcular via Solicitacao.maximum(:id) + 1 diverge sempre que a sequence tiver
+  # algum gap (rollback, insert falho, linha deletada), o que é comum em produção.
   def solicitar!(empresa)
     unless abaixo_do_minimo?
       raise SeloDigital::Error, "Estoque local do Tipo #{codigo_tipo} (#{estoque_local}) não está abaixo do mínimo (#{estoque_min})."
     end
 
-    id_solicitacao = (Solicitacao.maximum(:id) || 0) + 1
-
-    resposta = empresa.selo_digital_client.solicita_selos(
-      codigo_tipo_selo: codigo_tipo,
-      quantidade: qte_pedido,
-      id_solicitacao: id_solicitacao
-    )
-
-    if resposta[:chave].blank?
-      raise SeloDigital::Error, resposta[:mensagem].presence || "TJCE não retornou uma chave de solicitação"
-    end
-
-    Solicitacao.create!(
+    solicitacao = Solicitacao.create!(
       data: Date.current,
       quantidade: qte_pedido,
-      chave: resposta[:chave],
       recebido: false,
       codigo_tipo: codigo_tipo,
       estado: 0
     )
+
+    resposta = empresa.selo_digital_client.solicita_selos(
+      codigo_tipo_selo: codigo_tipo,
+      quantidade: qte_pedido,
+      id_solicitacao: solicitacao.id
+    )
+
+    if resposta[:chave].blank?
+      solicitacao.destroy!
+      raise SeloDigital::Error, resposta[:mensagem].presence || "TJCE não retornou uma chave de solicitação"
+    end
+
+    solicitacao.update!(chave: resposta[:chave])
+    solicitacao
   end
 end
