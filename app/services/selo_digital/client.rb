@@ -368,15 +368,19 @@ module SeloDigital
 
       itens = []
       doc.xpath("//itensLote").each do |item|
-        if item.at_xpath("statusFalha")
+        falha = item.at_xpath("statusFalha")
+        if falha
           itens << {
             id_ato:        item.at_xpath("idAto")&.text&.to_i,
-            sq_ato_tj:     item.at_xpath("statusFalha/codigo")&.text,
-            status_ato_tj: item.at_xpath("statusFalha/status")&.text
+            falha:         true,
+            sq_ato_tj:     nil,
+            status_ato_tj: falha.at_xpath("status")&.text,
+            codigo_falha:  falha.at_xpath("codigo")&.text
           }
         else
           itens << {
             id_ato:        item.at_xpath("idAto")&.text&.to_i,
+            falha:         false,
             sq_ato_tj:     item.at_xpath("sqAto")&.text,
             status_ato_tj: item.at_xpath("statusAto")&.text
           }

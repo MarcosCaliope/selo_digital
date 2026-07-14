@@ -121,7 +121,7 @@ openssl pkcs12 -legacy -in certs/arquivo.pfx -nocerts -nodes -out certs/client.k
 `SeloDigital::Client` also has three write operations, added alongside the `/movimentacao` write actions (see above) and **never fired against production**:
 - `solicita_selos(codigo_tipo_selo:, quantidade:, id_solicitacao:)` → `{ codigo:, mensagem:, chave:, data_hora: }`. Unlike the other operations, its response doesn't follow the `return > codigoRetorno > codigo/status/mensagem` shape — parsing uses document-wide XPath (`//codigo`, `//chave`, ...) matching the legacy PHP's own defensive approach, since the exact schema isn't documented anywhere available.
 - `receber_selos(chave:)` → `{ codigo:, status:, mensagem:, selos: [{ numero_serie:, validador:, codigo_selo: }] }`.
-- `movimentar_atos(atos:)` → array of `{ id_ato:, sq_ato_tj:, status_ato_tj: }`, one per submitted ato (see caveats in the Movimentação section above).
+- `movimentar_atos(atos:)` → array of `{ id_ato:, falha:, sq_ato_tj:, status_ato_tj:, codigo_falha: }`, one per submitted ato (see caveats in the Movimentação section above). `falha` is `true` when the item came back under `statusFalha` instead of `sqAto`/`statusAto` — `sq_ato_tj` is `nil` and `codigo_falha` holds the TJ error code in that case (there's no `sqAto` on a rejected ato, so the two must not be conflated). `Lote.enviar_atos!` uses this to set the ato's `status` to `"F"` (rejected) vs `"E"` (accepted) and excludes failures from the lote's confirmed count.
 
 **Response parsing:** `Nokogiri::XML` parses the SOAP response. Namespaces are stripped with `remove_namespaces!` before XPath queries.
 
