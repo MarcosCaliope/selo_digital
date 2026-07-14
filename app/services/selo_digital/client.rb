@@ -148,8 +148,8 @@ module SeloDigital
     # valorDocumento, valorEmolumento, valorFermoju (AtoPraticado já responde a
     # tudo isso — os nomes camelCase vêm das colunas reais de sd_atosPraticados).
     #
-    # Retorna um array de { id_ato:, sq_ato_tj:, status_ato_tj: } na ordem de resposta
-    # do TJCE — id_ato corresponde ao `id` passado em cada ato.
+    # Retorna um array de { id_ato:, falha:, sq_ato_tj:, status_ato_tj:, codigo_falha: }
+    # na ordem de resposta do TJCE — id_ato corresponde ao `id` passado em cada ato.
     #
     # NOTA: o bloco <partePessoa> replica o placeholder genérico ("Generico"/dados
     # fictícios) que o PHP legado já envia em produção — não temos confirmação de que
