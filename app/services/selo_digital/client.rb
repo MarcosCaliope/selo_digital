@@ -284,9 +284,10 @@ module SeloDigital
     end
 
     def post(url, xml)
-      log_dir = Rails.root.join("log/soap")
+      log_dir   = Rails.root.join("log/soap")
       FileUtils.mkdir_p(log_dir)
-      File.write(log_dir.join("request_#{Time.current.strftime("%Y%m%d_%H%M%S")}.xml"), xml)
+      timestamp = Time.current.strftime("%Y%m%d_%H%M%S")
+      File.write(log_dir.join("request_#{timestamp}.xml"), xml)
 
       uri  = URI.parse(url)
       http = Net::HTTP.new(uri.host, uri.port)
@@ -301,6 +302,11 @@ module SeloDigital
       request.body = xml
 
       response = http.request(request)
+      # Grava a resposta crua com o mesmo timestamp da requisição — sem isso,
+      # respostas de erro (fault SOAP, payload inesperado) são indistinguíveis
+      # de sucesso vazio depois do fato, já que só o parsing decide o que fazer
+      # com elas e nada da resposta original fica disponível pra investigar.
+      File.write(log_dir.join("response_#{timestamp}.xml"), response.body.to_s)
       response.body
     end
 
@@ -374,8 +380,15 @@ module SeloDigital
     end
 
     def parse_movimentar_atos(xml)
+      raise SeloDigital::Error, "Resposta vazia do servidor" if xml.blank?
+
       doc = Nokogiri::XML(xml)
       doc.remove_namespaces!
+
+      fault = doc.at_xpath("//Fault")
+      if fault
+        raise SeloDigital::Error, fault.at_xpath("faultstring")&.text.presence || "Falha SOAP ao movimentar atos"
+      end
 
       itens = []
       doc.xpath("//itensLote").each do |item|
