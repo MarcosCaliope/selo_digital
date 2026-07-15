@@ -143,10 +143,10 @@ module SeloDigital
 
     # Submete um lote de atos praticados ao TJCE, consumindo o selo já reservado
     # localmente para cada um. `atos` é uma lista de objetos respondendo a: id,
-    # codigo_ato, tipo_selo, numero_selo, validador, valorSelo, numeroTalao,
-    # tipoCobranca, tipoGeracao, tipoMovimentacao, quantidadeExtra,
-    # valorDocumento, valorEmolumento, valorFermoju (AtoPraticado já responde a
-    # tudo isso — os nomes camelCase vêm das colunas reais de sd_atosPraticados).
+    # codigo_ato, tipo_selo, numero_selo, validador, valorSelo, tipoCobranca,
+    # tipoMovimentacao, quantidadeExtra, valorDocumento, valorEmolumento,
+    # valorFermoju (AtoPraticado já responde a tudo isso — os nomes camelCase
+    # vêm das colunas reais de sd_atosPraticados).
     #
     # Retorna um array de { id_ato:, falha:, sq_ato_tj:, status_ato_tj:, codigo_falha: }
     # na ordem de resposta do TJCE — id_ato corresponde ao `id` passado em cada ato.
@@ -198,23 +198,25 @@ module SeloDigital
       "#{data.strftime("%Y-%m-%d")}T#{hora}"
     end
 
+    # Ordem dos elementos e conjunto de campos aceitos confirmados batendo um
+    # ato real contra o TJCE de produção: primeiro rejeitou "tipoGeracao" (não
+    # existe no schema CGenerica), depois rejeitou a ordem por faltar
+    # <numeroAtendimento> logo após valorFermoju — esse elemento recebe o
+    # mesmo valor de numeroTalao (não existe coluna "numeroAtendimento" em
+    # sd_atosPraticados; numeroTalao é o dado real por trás desse campo).
+    # sqAtoRetificado e registro também são legais mas não têm coluna
+    # correspondente para atos normais (sqAtoRetificado é só para
+    # retificação) e foram omitidos.
     def ato_xml(ato)
       <<~XML
         <atos xsi:type="ns3:CGenerica">
-          <idAto>#{ato.id}</idAto>
-          <dataAtoPraticado>#{data_hora_ato(ato.dataAtoPraticado, ato.tempo)}</dataAtoPraticado>
-          <dataAtoSolicitacao>#{data_hora_ato(ato.dataAtoSolicitacao, ato.tempo)}</dataAtoSolicitacao>
-          <valorDocumento>#{ato.valorDocumento}</valorDocumento>
           <valorEmolumento>#{ato.valorEmolumento}</valorEmolumento>
-          <valorFermoju>#{ato.valorFermoju}</valorFermoju>
-          <valorEmolumentoLivre>0</valorEmolumentoLivre>
-          <numeroTalao>#{ato.numeroTalao}</numeroTalao>
-          <tipoCobranca>#{ato.tipoCobranca}</tipoCobranca>
-          <tipoGeracao>#{ato.tipoGeracao}</tipoGeracao>
-          <tipoMovimentacao>#{ato.tipoMovimentacao}</tipoMovimentacao>
-          <responsavel>#{@informante_cpf}</responsavel>
-          <quantidadeExtra>#{ato.quantidadeExtra}</quantidadeExtra>
           <codigoAto>#{ato.codigo_ato}</codigoAto>
+          <valorEmolumentoLivre>0</valorEmolumentoLivre>
+          <dataAtoPraticado>#{data_hora_ato(ato.dataAtoPraticado, ato.tempo)}</dataAtoPraticado>
+          <tipoMovimentacao>#{ato.tipoMovimentacao}</tipoMovimentacao>
+          <dataAtoSolicitacao>#{data_hora_ato(ato.dataAtoSolicitacao, ato.tempo)}</dataAtoSolicitacao>
+          <observacoes></observacoes>
           <selo>
             <codigoSelo>
               <codigo>#{ato.tipo_selo}</codigo>
@@ -223,6 +225,13 @@ module SeloDigital
             <validador>#{ato.validador.to_s.strip}</validador>
             <valor>#{ato.valorSelo}</valor>
           </selo>
+          <valorDocumento>#{ato.valorDocumento}</valorDocumento>
+          <valorFermoju>#{ato.valorFermoju}</valorFermoju>
+          <numeroAtendimento>#{ato.numeroTalao}</numeroAtendimento>
+          <tipoCobranca>#{ato.tipoCobranca}</tipoCobranca>
+          <quantidadeExtra>#{ato.quantidadeExtra}</quantidadeExtra>
+          <responsavel>#{@informante_cpf}</responsavel>
+          <idAto>#{ato.id}</idAto>
           <partePessoa>
             <ordem>1</ordem>
             <tipoParte>1</tipoParte>
@@ -246,7 +255,6 @@ module SeloDigital
               </documento>
             </pessoa>
           </partePessoa>
-          <observacoes></observacoes>
         </atos>
       XML
     end
@@ -306,7 +314,10 @@ module SeloDigital
       # respostas de erro (fault SOAP, payload inesperado) são indistinguíveis
       # de sucesso vazio depois do fato, já que só o parsing decide o que fazer
       # com elas e nada da resposta original fica disponível pra investigar.
-      File.write(log_dir.join("response_#{timestamp}.xml"), response.body.to_s)
+      # binwrite (não write): o corpo pode vir em encoding diferente de UTF-8
+      # (ex: ISO-8859-1) e write levantaria Encoding::UndefinedConversionError
+      # ao tentar recodificar — aqui só queremos preservar os bytes originais.
+      File.binwrite(log_dir.join("response_#{timestamp}.xml"), response.body.to_s)
       response.body
     end
 
@@ -388,6 +399,16 @@ module SeloDigital
       fault = doc.at_xpath("//Fault")
       if fault
         raise SeloDigital::Error, fault.at_xpath("faultstring")&.text.presence || "Falha SOAP ao movimentar atos"
+      end
+
+      # Em erro de validação global (ex: XML fora do schema), o TJCE responde
+      # no mesmo formato <return><codigoRetorno> usado por consulta_selos_disponiveis
+      # e receber_selos, sem nenhum <itensLote> — mesmo com status "0" ali dentro,
+      # que nessas outras operações significa sucesso. Presença de codigoRetorno
+      # sem nenhum item processado só acontece nesse caso de erro global.
+      codigo_retorno = doc.at_xpath("//codigoRetorno")
+      if codigo_retorno && doc.xpath("//itensLote").empty?
+        raise SeloDigital::Error, codigo_retorno.at_xpath("mensagem")&.text.presence || "Erro ao movimentar atos"
       end
 
       itens = []
