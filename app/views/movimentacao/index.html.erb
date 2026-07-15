@@ -43,7 +43,12 @@
                     <td><%= ato.selo %></td>
                     <td><%= ato.minutos_pendente %> min</td>
                     <td><%= ato.codigo_ato %></td>
-                    <td><span class="sd-badge">Tipo <%= ato.tipo_selo %></span></td>
+                    <td>
+                      <span class="sd-badge">Tipo <%= ato.tipo_selo %></span>
+                      <% if ato.retificacao? %>
+                        <span class="sd-badge" title="Retifica o ato TJCE sqAto <%= ato.sqAto_idOriginal %>">Retificação</span>
+                      <% end %>
+                    </td>
                     <td><%= ato.id_ato.to_i %></td>
                   </tr>
                 <% end %>

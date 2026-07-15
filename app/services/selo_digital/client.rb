@@ -145,8 +145,8 @@ module SeloDigital
     # localmente para cada um. `atos` é uma lista de objetos respondendo a: id,
     # codigo_ato, tipo_selo, numero_selo, validador, valorSelo, tipoCobranca,
     # tipoMovimentacao, quantidadeExtra, valorDocumento, valorEmolumento,
-    # valorFermoju (AtoPraticado já responde a tudo isso — os nomes camelCase
-    # vêm das colunas reais de sd_atosPraticados).
+    # valorFermoju, retificacao?, sqAto_idOriginal (AtoPraticado já responde a
+    # tudo isso — os nomes camelCase vêm das colunas reais de sd_atosPraticados).
     #
     # Retorna um array de { id_ato:, falha:, sq_ato_tj:, status_ato_tj:, codigo_falha: }
     # na ordem de resposta do TJCE — id_ato corresponde ao `id` passado em cada ato.
@@ -204,15 +204,18 @@ module SeloDigital
     # <numeroAtendimento> logo após valorFermoju — esse elemento recebe o
     # mesmo valor de numeroTalao (não existe coluna "numeroAtendimento" em
     # sd_atosPraticados; numeroTalao é o dado real por trás desse campo).
-    # sqAtoRetificado e registro também são legais mas não têm coluna
-    # correspondente para atos normais (sqAtoRetificado é só para
-    # retificação) e foram omitidos.
+    # "registro" também é legal mas não tem coluna correspondente e foi omitido.
+    #
+    # <sqAtoRetificado> só é enviado quando ato.retificacao? — sua posição real
+    # no XSD (docs/tjce/) é logo após codigoAto, então foi inserido ali; ver
+    # AtoPraticado#retificacao? para de onde vem o valor.
     def ato_xml(ato)
+      sq_ato_retificado = ato.retificacao? ? "<sqAtoRetificado>#{ato.sqAto_idOriginal}</sqAtoRetificado>\n  " : ""
       <<~XML
         <atos xsi:type="ns3:CGenerica">
           <valorEmolumento>#{ato.valorEmolumento}</valorEmolumento>
           <codigoAto>#{ato.codigo_ato}</codigoAto>
-          <valorEmolumentoLivre>0</valorEmolumentoLivre>
+          #{sq_ato_retificado}<valorEmolumentoLivre>0</valorEmolumentoLivre>
           <dataAtoPraticado>#{data_hora_ato(ato.dataAtoPraticado, ato.tempo)}</dataAtoPraticado>
           <tipoMovimentacao>#{ato.tipoMovimentacao}</tipoMovimentacao>
           <dataAtoSolicitacao>#{data_hora_ato(ato.dataAtoSolicitacao, ato.tempo)}</dataAtoSolicitacao>
