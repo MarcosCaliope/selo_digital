@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?><wsdl:definitions name="MovimentarAtosService" targetNamespace="http://impl.service.movimentacao.selodigital.tjce.jus.br/" xmlns:ns1="http://service.movimentacao.selodigital.tjce.jus.br/" xmlns:ns2="http://schemas.xmlsoap.org/soap/http" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://impl.service.movimentacao.selodigital.tjce.jus.br/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <wsdl:import location="https://selodigital.tjce.jus.br/wsselodigital/MovimentarAtos?wsdl=MovimentarAtosService.wsdl" namespace="http://service.movimentacao.selodigital.tjce.jus.br/">
+    </wsdl:import>
+  <wsdl:binding name="MovimentarAtosServiceSoapBinding" type="ns1:MovimentarAtosService">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="consultaMovimentacao">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="consultaMovimentacao">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="consultaMovimentacaoResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+      <wsdl:fault name="JAXBException">
+        <soap:fault name="JAXBException" use="literal" />
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="movimentarAtos">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="movimentarAtos">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="movimentarAtosResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+      <wsdl:fault name="JAXBException">
+        <soap:fault name="JAXBException" use="literal" />
+      </wsdl:fault>
+      <wsdl:fault name="IOException">
+        <soap:fault name="IOException" use="literal" />
+      </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="MovimentarAtosService">
+    <wsdl:port binding="tns:MovimentarAtosServiceSoapBinding" name="MovimentarAtosServiceImplPort">
+      <soap:address location="http://TJSDP06:8080/wsselodigital/MovimentarAtos" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
