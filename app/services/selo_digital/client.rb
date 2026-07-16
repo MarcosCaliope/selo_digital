@@ -156,9 +156,9 @@ module SeloDigital
     # NOTA: o bloco <partePessoa> replica o placeholder genérico ("Generico"/dados
     # fictícios) que o PHP legado já envia em produção — não temos confirmação de que
     # o TJCE valida esse bloco de fato — exceto nomePessoa/documento quando
-    # AtoPraticado#parte_pessoa_dados acha dados reais (atos de título ou certidão,
-    # stiposelagem "D"/"C"), caso em que o real é usado em vez do placeholder. Ver
-    # CLAUDE.md antes de usar isso em produção.
+    # AtoPraticado#parte_pessoa_dados acha dados reais (atos de título, certidão
+    # ou escritura, stiposelagem "D"/"C"/"E"), caso em que o real é usado em vez
+    # do placeholder. Ver CLAUDE.md antes de usar isso em produção.
     #
     # id_lote: <idLote> é obrigatório no XSD (TMovimentacaoAtos), vem depois de
     # todos os <atos> — o PHP legado usa o id recém-inserido em sd_lotes (insere
