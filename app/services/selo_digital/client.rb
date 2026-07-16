@@ -1,5 +1,6 @@
 require "net/https"
 require "openssl"
+require "cgi"
 
 module SeloDigital
   class Client
@@ -145,15 +146,19 @@ module SeloDigital
     # localmente para cada um. `atos` é uma lista de objetos respondendo a: id,
     # codigo_ato, tipo_selo, numero_selo, validador, valorSelo, tipoCobranca,
     # tipoMovimentacao, quantidadeExtra, valorDocumento, valorEmolumento,
-    # valorFermoju, retificacao?, sqAto_idOriginal (AtoPraticado já responde a
-    # tudo isso — os nomes camelCase vêm das colunas reais de sd_atosPraticados).
+    # valorFermoju, retificacao?, sqAto_idOriginal, parte_pessoa_titulo (AtoPraticado
+    # já responde a tudo isso — os nomes camelCase vêm das colunas reais de
+    # sd_atosPraticados).
     #
     # Retorna um array de { id_ato:, falha:, sq_ato_tj:, status_ato_tj:, codigo_falha: }
     # na ordem de resposta do TJCE — id_ato corresponde ao `id` passado em cada ato.
     #
     # NOTA: o bloco <partePessoa> replica o placeholder genérico ("Generico"/dados
     # fictícios) que o PHP legado já envia em produção — não temos confirmação de que
-    # o TJCE valida esse bloco de fato. Ver CLAUDE.md antes de usar isso em produção.
+    # o TJCE valida esse bloco de fato — exceto nomePessoa/documento quando
+    # AtoPraticado#parte_pessoa_titulo acha dados reais (atos de título, stiposelagem
+    # "D"), caso em que o real é usado em vez do placeholder. Ver CLAUDE.md antes de
+    # usar isso em produção.
     def movimentar_atos(atos:)
       corpo = <<~XML
         <arg0>
@@ -209,8 +214,21 @@ module SeloDigital
     # <sqAtoRetificado> só é enviado quando ato.retificacao? — sua posição real
     # no XSD (docs/tjce/) é logo após codigoAto, então foi inserido ali; ver
     # AtoPraticado#retificacao? para de onde vem o valor.
+    #
+    # nomePessoa/documento em <partePessoa> usam os dados reais do devedor
+    # (AtoPraticado#parte_pessoa_titulo) quando disponíveis; caem no mesmo
+    # placeholder genérico de sempre quando não (ver nota da classe acima).
     def ato_xml(ato)
       sq_ato_retificado = ato.retificacao? ? "<sqAtoRetificado>#{ato.sqAto_idOriginal}</sqAtoRetificado>\n  " : ""
+      parte_pessoa_titulo = ato.parte_pessoa_titulo
+      # CGI.escapeHTML aqui porque nome vem de texto livre do legado (nome de
+      # empresa/pessoa) — diferente dos demais campos interpolados neste método,
+      # que são todos numéricos/códigos e não podem conter "&", "<", etc. Sem
+      # isso um nome como "R & A COMERCIAL LTDA" (existe aos milhares em
+      # cbl_dev) quebraria o XML.
+      nome_pessoa = parte_pessoa_titulo ? CGI.escapeHTML(parte_pessoa_titulo[:nome].to_s) : "Generico"
+      tipo_documento = parte_pessoa_titulo ? parte_pessoa_titulo[:tipo_documento] : 1
+      numero_documento = parte_pessoa_titulo ? parte_pessoa_titulo[:numero_documento] : "0123456789"
       <<~XML
         <atos xsi:type="ns3:CGenerica">
           <valorEmolumento>#{ato.valorEmolumento}</valorEmolumento>
@@ -239,7 +257,7 @@ module SeloDigital
             <ordem>1</ordem>
             <tipoParte>1</tipoParte>
             <pessoa>
-              <nomePessoa>Generico</nomePessoa>
+              <nomePessoa>#{nome_pessoa}</nomePessoa>
               <endereco>
                 <tipoEndereco>1</tipoEndereco>
                 <descricaoLogradouro>rua</descricaoLogradouro>
@@ -250,8 +268,8 @@ module SeloDigital
                 <cep>61522080</cep>
               </endereco>
               <documento>
-                <tipoDocumento>1</tipoDocumento>
-                <numero>0123456789</numero>
+                <tipoDocumento>#{tipo_documento}</tipoDocumento>
+                <numero>#{numero_documento}</numero>
                 <descricao>Doc Teste</descricao>
                 <orgaoEmissor>SSP</orgaoEmissor>
                 <dataEmissao>2017-01-01T10:00:00</dataEmissao>
