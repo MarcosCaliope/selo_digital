@@ -34,14 +34,15 @@ class AtoPraticado < ApplicationRecord
   # nomePessoa/documento reais para <partePessoa> (ver client.rb#ato_xml), quando
   # stiposelagem indica que este ato não é um ato de cartório comum e por isso
   # tem uma parte real identificável fora de sd_atosPraticados — hoje "D"
-  # (título de protesto), "C" (certidão) e "E" (escritura). Nos demais casos
-  # (stiposelagem em branco, ou qualquer valor sem tratamento aqui) retorna nil
-  # e client.rb usa o placeholder genérico de sempre.
+  # (título de protesto), "C" (certidão), "E" (escritura) e "T" (testamento).
+  # Nos demais casos (stiposelagem em branco, ou qualquer valor sem tratamento
+  # aqui) retorna nil e client.rb usa o placeholder genérico de sempre.
   def parte_pessoa_dados
     case stiposelagem
     when "D" then parte_pessoa_titulo
     when "C" then parte_pessoa_certidao
     when "E" then parte_pessoa_escritura
+    when "T" then parte_pessoa_testamento
     end
   end
 
@@ -101,6 +102,24 @@ class AtoPraticado < ApplicationRecord
     return nil unless documento
 
     { nome: escritura.gant1 }.merge(documento)
+  end
+
+  # stiposelagem "T": testamento (bd_test, id = id_ato) — nome vem de
+  # testador, documento de qualifica1. Ao contrário de "C"/"E", só mapeia CPF
+  # (não reusa tipo_e_numero_documento_por_digitos, que também aceita 14
+  # dígitos como CNPJ): testador é sempre pessoa física, CNPJ não faz sentido
+  # aqui. qualifica1 é campo de "qualificação" livre no legado — a maioria é
+  # CPF formatado, mas várias linhas antigas têm RG em vez de CPF (ex.: "RG Nº
+  # 330.559-SSP-CE") ou estão em branco/sujas ("***"); qualquer coisa que não
+  # resulte em exatamente 11 dígitos cai no placeholder.
+  def parte_pessoa_testamento
+    testamento = BdTest.find_by(id: id_ato.to_i)
+    return nil unless testamento
+
+    numero_documento = testamento.qualifica1.to_s.gsub(/\D/, "")
+    return nil unless numero_documento.length == 11
+
+    { nome: testamento.testador, tipo_documento: TIPO_DOCUMENTO_CPF, numero_documento: numero_documento }
   end
 
   # Campos legados tipo scpfcnpj/cpfcgc_n guardam CPF ou CNPJ no mesmo campo,
