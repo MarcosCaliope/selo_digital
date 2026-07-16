@@ -1,0 +1,90 @@
+<% content_for :title, "Retificar ato #{@ato.id} — Selo Digital" %>
+
+<div class="sd-container">
+  <div class="sd-header">
+    <div>
+      <h1>Retificar ato <%= @ato.id %></h1>
+      <p class="sd-subtitle">
+        Selo <%= @ato.selo %> — confirmado pelo TJCE com sqAto <%= @ato.sqAto_tj %>.
+        Corrija os campos abaixo; ao salvar o ato volta para a fila de "Atos aguardando envio"
+        marcado como Retificação, referenciando o sqAto original — nada é enviado ao TJCE agora.
+      </p>
+    </div>
+    <%= link_to "Cancelar", movimentacao_path, class: "sd-btn sd-btn--secondary" %>
+  </div>
+
+  <% if @ato.errors.any? %>
+    <div class="sd-errors">
+      <strong><%= pluralize(@ato.errors.count, "erro") %> impediram o salvamento:</strong>
+      <ul>
+        <% @ato.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form_with model: @ato, url: retificar_movimentacao_path(@ato), method: :patch, local: true, html: { class: "sd-form" } do |f| %>
+    <div class="sd-form-grid">
+      <div class="sd-field">
+        <%= f.label :codigo_ato, "Código do ato" %>
+        <%= f.text_field :codigo_ato %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :tipoMovimentacao, "Tipo de movimentação" %>
+        <%= f.text_field :tipoMovimentacao %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :dataAtoPraticado, "Data do ato praticado" %>
+        <%= f.date_field :dataAtoPraticado %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :dataAtoSolicitacao, "Data do ato solicitado" %>
+        <%= f.date_field :dataAtoSolicitacao %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :valorEmolumento, "Valor emolumento" %>
+        <%= f.text_field :valorEmolumento %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :valorEmolumentoLivre, "Valor emolumento livre" %>
+        <%= f.text_field :valorEmolumentoLivre %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :valorDocumento, "Valor documento" %>
+        <%= f.text_field :valorDocumento %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :valorFermoju, "Valor FERMOJU" %>
+        <%= f.text_field :valorFermoju %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :numeroTalao, "Número do talão (numeroAtendimento)" %>
+        <%= f.text_field :numeroTalao %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :tipoCobranca, "Tipo de cobrança" %>
+        <%= f.text_field :tipoCobranca %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :quantidadeExtra, "Quantidade extra" %>
+        <%= f.text_field :quantidadeExtra %>
+      </div>
+    </div>
+
+    <div style="padding: 0.75rem 1rem;">
+      <%= f.submit "Marcar como retificação e devolver à fila", class: "sd-btn",
+          data: { turbo_confirm: "Marcar o ato #{@ato.id} para retificação? Ele volta para a fila de envio e será reenviado ao TJCE referenciando o sqAto original." } %>
+    </div>
+  <% end %>
+</div>

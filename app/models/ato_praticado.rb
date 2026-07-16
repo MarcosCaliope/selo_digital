@@ -19,6 +19,21 @@ class AtoPraticado < ApplicationRecord
     where(status: "N", lote: 0).where.not(tipo_selo: 99).order(:id).limit(50)
   }
 
+  # Atos já confirmados pelo TJCE (status "E") com sqAto_tj real, candidatos a
+  # retificação — ver #marcar_para_retificacao!. A maioria das linhas com
+  # status "E" no legado é histórica, de antes de sqAto_tj/data_retorno_tj
+  # existirem (sem os dois preenchidos, não há sqAto pra referenciar em
+  # <sqAtoRetificado>) — por isso o filtro. NULLS LAST porque o Postgres
+  # ordena NULL primeiro em DESC por padrão, o que colocaria essas linhas
+  # históricas na frente das enviadas de verdade por este app. Uma vez
+  # marcado, o ato volta a status "N" e some desta lista até ser reenviado
+  # (voltando pra "E"/"F").
+  scope :enviados, -> {
+    where(status: "E").where.not(sqAto_tj: [ nil, "" ])
+      .order(Arel.sql("data_retorno_tj DESC NULLS LAST"))
+      .limit(50)
+  }
+
   def selo
     "#{numero_selo&.strip}-#{validador&.strip}"
   end
@@ -29,6 +44,23 @@ class AtoPraticado < ApplicationRecord
   # <sqAtoRetificado>.
   def retificacao?
     retificacao == 1
+  end
+
+  # Marca este ato (já confirmado pelo TJCE, status "E") como uma retificação
+  # a ser reenviada: aplica os campos corrigidos, referencia o sqAto original
+  # (o mais recente conhecido — sqAto_tj_retificacao se este já for uma
+  # correção de uma correção anterior, senão sqAto_tj) em sqAto_idOriginal, e
+  # devolve o ato pra fila normal de envio (status "N", lote 0) — dali em
+  # diante segue o fluxo comum de pendentes_de_envio/Lote.enviar_atos!, que já
+  # sabe gravar o retorno do TJ nas colunas *_retificacao em vez de sobrescrever
+  # sqAto_tj/statusAtoTJ originais (ver Lote.enviar_atos!).
+  def marcar_para_retificacao!(campos)
+    assign_attributes(campos)
+    self.retificacao = 1
+    self.sqAto_idOriginal = sqAto_tj_retificacao.presence || sqAto_tj
+    self.status = "N"
+    self.lote = 0
+    save!
   end
 
   # nomePessoa/documento reais para <partePessoa> (ver client.rb#ato_xml), quando

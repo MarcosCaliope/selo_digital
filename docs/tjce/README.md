@@ -27,10 +27,11 @@ depender de tentativa e erro contra produção de novo.
   (+ `observacoes`, `partePessoa`).
 - `Ato` tem um campo `sqAtoRetificado` (`xs:long`, opcional) — é assim que se retifica um
   ato já enviado: reenviar o mesmo `CGenerica`, preenchendo esse campo com o `sqAto` que o
-  TJCE atribuiu ao ato original. Não é um tipo/endpoint separado. Ainda não implementado
-  em `ato_xml`/`Lote.enviar_atos!` — ver colunas `retificacao`, `sqAto_idOriginal`,
-  `sqAto_tj_retificacao` em `sd_atosPraticados`, que já existem mas não são lidas/escritas
-  por este app.
+  TJCE atribuiu ao ato original. Não é um tipo/endpoint separado. **Implementado** em
+  `ato_xml`/`Lote.enviar_atos!` e no dashboard de movimentação (marcar ato para retificação,
+  editar campos, reenviar) — ver colunas `retificacao`, `sqAto_idOriginal`,
+  `sqAto_tj_retificacao` em `sd_atosPraticados` e a seção de retificação em CLAUDE.md. Ainda
+  não testado contra produção de verdade (nenhuma retificação foi disparada ainda).
 - O mesmo serviço também expõe `consultaMovimentacao(idLote, idAto?)` — consulta status de
   um lote/ato direto no TJCE. Não usado ainda.
 - Campos obrigatórios (`minOccurs` ausente, i.e. default 1) em `Ato`: `dataAtoSolicitacao`,

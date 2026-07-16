@@ -1,6 +1,7 @@
 class MovimentacaoController < ApplicationController
   def index
     @atos_pendentes = AtoPraticado.pendentes_de_envio.to_a
+    @atos_enviados = AtoPraticado.enviados.to_a
     @lotes = Lote.emitidos_hoje.to_a
     @tipos_selo = TipoSelo.com_estoque_local
     @solicitacoes = Solicitacao.pendentes.to_a
@@ -32,7 +33,27 @@ class MovimentacaoController < ApplicationController
     redirect_to movimentacao_path, alert: "Erro ao enviar atos: #{e.message}"
   end
 
+  def editar_retificacao
+    @ato = AtoPraticado.find(params[:id])
+  end
+
+  def retificar
+    ato = AtoPraticado.find(params[:id])
+    ato.marcar_para_retificacao!(retificacao_params)
+    redirect_to movimentacao_path, notice: "Ato #{ato.id} marcado para retificação — revise e envie na fila de atos pendentes."
+  rescue ActiveRecord::RecordInvalid, StandardError => e
+    redirect_to movimentacao_path, alert: "Erro ao marcar retificação: #{e.message}"
+  end
+
   private
+
+  def retificacao_params
+    params.require(:ato_praticado).permit(
+      :codigo_ato, :valorEmolumento, :valorDocumento, :valorFermoju, :valorEmolumentoLivre,
+      :numeroTalao, :tipoCobranca, :tipoMovimentacao, :quantidadeExtra,
+      :dataAtoPraticado, :dataAtoSolicitacao
+    )
+  end
 
   def empresa!
     Empresa.first || raise(SeloDigital::Error, "Nenhuma empresa cadastrada.")

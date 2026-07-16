@@ -47,11 +47,8 @@ class Lote < ApplicationRecord
 
       ato.update!(
         lote: lote.id,
-        data_retorno_tj: Time.current,
         status: item[:falha] ? "F" : "E",
-        data_atualizacao_tj: Time.current,
-        sqAto_tj: item[:sq_ato_tj],
-        statusAtoTJ: item[:status_ato_tj]
+        **retorno_tj_attrs(ato, item)
       )
       processados << ato
       confirmados += 1 unless item[:falha]
@@ -68,4 +65,29 @@ class Lote < ApplicationRecord
 
     lote
   end
+
+  # Retificação (ato.retificacao?) grava o retorno do TJ nas colunas
+  # *_retificacao dedicadas, preservando sqAto_tj/statusAtoTJ/data_atualizacao_tj/
+  # data_retorno_tj do envio original — do contrário reenviar uma correção
+  # sobrescreveria o sqAto original, quebrando uma eventual retificação
+  # subsequente (que precisa do sqAto mais recente, não do id local do ato).
+  # statusAtoTJ não tem uma coluna _retificacao equivalente no schema legado,
+  # então só é atualizado no envio original.
+  def self.retorno_tj_attrs(ato, item)
+    if ato.retificacao?
+      {
+        data_retorno_tj_retificacao: Time.current,
+        data_atualizacao_tj_retificacao: Time.current,
+        sqAto_tj_retificacao: item[:sq_ato_tj]
+      }
+    else
+      {
+        data_retorno_tj: Time.current,
+        data_atualizacao_tj: Time.current,
+        sqAto_tj: item[:sq_ato_tj],
+        statusAtoTJ: item[:status_ato_tj]
+      }
+    end
+  end
+  private_class_method :retorno_tj_attrs
 end

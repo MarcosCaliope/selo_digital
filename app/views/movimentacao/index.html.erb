@@ -95,6 +95,41 @@
           <p class="sd-panel-empty">Nenhum lote emitido hoje.</p>
         <% end %>
       </div>
+
+      <div class="sd-panel">
+        <div class="sd-panel-header">
+          <span>Atos enviados (confirmados pelo TJCE)</span>
+          <span class="sd-field-hint"><%= @atos_enviados.size %></span>
+        </div>
+        <% if @atos_enviados.any? %>
+          <table class="sd-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Selo</th>
+                <th>sqAto TJ</th>
+                <th>Retorno</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @atos_enviados.each do |ato| %>
+                <tr>
+                  <td><%= ato.id %></td>
+                  <td><%= ato.selo %></td>
+                  <td><%= ato.sqAto_tj %></td>
+                  <td><%= l(ato.data_retorno_tj, format: :short) if ato.data_retorno_tj %></td>
+                  <td>
+                    <%= link_to "Retificar", editar_retificacao_movimentacao_path(ato), class: "sd-btn sd-btn--secondary" %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="sd-panel-empty">Nenhum ato enviado.</p>
+        <% end %>
+      </div>
     </div>
 
     <div>

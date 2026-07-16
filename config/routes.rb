@@ -14,6 +14,8 @@ Rails.application.routes.draw do
   post "movimentacao/solicitar_selos", to: "movimentacao#solicitar_selos", as: :solicitar_selos_movimentacao
   post "movimentacao/receber_selos/:id", to: "movimentacao#receber_selos", as: :receber_selos_movimentacao
   post "movimentacao/enviar_atos", to: "movimentacao#enviar_atos", as: :enviar_atos_movimentacao
+  get "movimentacao/atos/:id/retificar", to: "movimentacao#editar_retificacao", as: :editar_retificacao_movimentacao
+  patch "movimentacao/atos/:id/retificar", to: "movimentacao#retificar", as: :retificar_movimentacao
   resources :empresas
   root "selos#index"
 end
