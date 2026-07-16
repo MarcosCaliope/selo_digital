@@ -94,6 +94,13 @@ class AtoPraticado < ApplicationRecord
   # ("outorgante"), documento de cpfcgc_n. Formatado com pontuação
   # (".", "-", "/") ao contrário de tblcontcertidoes.scpfcnpj, mas
   # tipo_e_numero_documento_por_digitos já limpa isso.
+  #
+  # cpfcgc_n guarda o documento da 1ª e 2ª pessoa (gant1/gant2, os
+  # outorgantes — concatenados quando há dois, daí o caso de 22 dígitos
+  # citado acima); cpfcgc_d guarda o documento da 3ª pessoa (gado1, o
+  # outorgado). Só a 1ª pessoa (gant1/cpfcgc_n) é usada aqui hoje — o XSD do
+  # TJCE só aceita uma <pessoa> por ato, então gant2/gado1/cpfcgc_d não têm
+  # como ser enviados de qualquer forma.
   def parte_pessoa_escritura
     escritura = BdEscr.find_by(id: id_ato.to_i)
     return nil unless escritura
