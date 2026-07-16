@@ -4,21 +4,36 @@ class Lote < ApplicationRecord
   scope :emitidos_hoje, -> { where("date(data_emissao) = date(now())").order(id: :desc) }
 
   # Submete os atos informados ao TJCE (movimentarAtos), consumindo o selo já
-  # reservado localmente em cada um. Chama o TJCE primeiro e só então grava
-  # qualquer coisa no banco: se movimentar_atos levantar (rede, timeout,
-  # resposta inesperada), nenhum ato é tocado e continua disponível em
-  # pendentes_de_envio para nova tentativa — em vez de ficar com lote setado
-  # e status preso em "N", órfão e invisível na fila. Só entram no lote os
-  # atos que de fato vieram na resposta do TJCE; os demais (se a resposta
+  # reservado localmente em cada um. O Lote precisa existir *antes* da chamada
+  # porque seu id vai no envelope como <idLote> (obrigatório no XSD; replica o
+  # que o PHP legado já fazia: insere o lote vazio, lê o id de volta, só então
+  # monta e envia). <idLote> nunca era enviado aqui — o TJCE parece ter
+  # tratado a ausência como um valor implícito fixo (0), que só aceita uma vez
+  # por serventia; reenviar (mesmo lotes diferentes) batia em "O idLote já foi
+  # enviado anteriormente por essa serventia" porque toda chamada repetia esse
+  # mesmo valor implícito. Usar o id real do Lote garante um <idLote> novo a
+  # cada tentativa.
+  #
+  # Se movimentar_atos levantar (rede, timeout, resposta inesperada, ou o
+  # próprio erro de idLote duplicado), o Lote recém-criado é destruído e
+  # nenhum ato é tocado — fica disponível em pendentes_de_envio para nova
+  # tentativa, que vai criar outro Lote com outro id, em vez de ficar com lote
+  # setado e status preso em "N", órfão e invisível na fila. Só entram no lote
+  # os atos que de fato vieram na resposta do TJCE; os demais (se a resposta
   # vier incompleta) também continuam pendentes. Atos rejeitados pelo TJ
   # (statusFalha na resposta) recebem status "F" e não entram na contagem de
   # confirmados; sqAto_tj só é gravado para atos aceitos.
   def self.enviar_atos!(empresa, atos)
     return if atos.empty?
 
-    itens = empresa.selo_digital_client.movimentar_atos(atos: atos)
-
     lote = create!(data_emissao: Time.current)
+
+    begin
+      itens = empresa.selo_digital_client.movimentar_atos(atos: atos, id_lote: lote.id)
+    rescue StandardError
+      lote.destroy!
+      raise
+    end
 
     confirmados = 0
     processados = []

@@ -159,12 +159,19 @@ module SeloDigital
     # AtoPraticado#parte_pessoa_titulo acha dados reais (atos de título, stiposelagem
     # "D"), caso em que o real é usado em vez do placeholder. Ver CLAUDE.md antes de
     # usar isso em produção.
-    def movimentar_atos(atos:)
+    #
+    # id_lote: <idLote> é obrigatório no XSD (TMovimentacaoAtos), vem depois de
+    # todos os <atos> — o PHP legado usa o id recém-inserido em sd_lotes (insere
+    # o lote vazio primeiro, lê de volta o id, só então monta e envia o envelope).
+    # O chamador (Lote.enviar_atos!) precisa seguir a mesma ordem: criar o Lote
+    # antes de chamar isto aqui, para ter um id real e único para passar.
+    def movimentar_atos(atos:, id_lote:)
       corpo = <<~XML
         <arg0>
           #{cabecalho}
           <informante>#{@informante_cpf}</informante>
           #{atos.map { |ato| ato_xml(ato) }.join}
+          <idLote>#{id_lote}</idLote>
         </arg0>
       XML
       xml = envelope(
