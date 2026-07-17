@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='UTF-8'?><wsdl:definitions name="SolicitacaoSeloService" targetNamespace="http://impl.service.solicitacao.selodigital.tjce.jus.br/" xmlns:ns1="http://service.solicitacao.selodigital.tjce.jus.br/" xmlns:ns2="http://schemas.xmlsoap.org/soap/http" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://impl.service.solicitacao.selodigital.tjce.jus.br/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <wsdl:import location="https://selodigital.tjce.jus.br/wsselodigital/SolicitacaoSelo?wsdl=SolicitacaoSeloService.wsdl" namespace="http://service.solicitacao.selodigital.tjce.jus.br/">
+    </wsdl:import>
+  <wsdl:binding name="SolicitacaoSeloServiceSoapBinding" type="ns1:SolicitacaoSeloService">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="historicoSolicitacaoSelos">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="historicoSolicitacaoSelos">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="historicoSolicitacaoSelosResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+      <wsdl:fault name="JAXBException">
+        <soap:fault name="JAXBException" use="literal" />
+      </wsdl:fault>
+      <wsdl:fault name="DatatypeConfigurationException">
+        <soap:fault name="DatatypeConfigurationException" use="literal" />
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="solicitaSelos">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="solicitaSelos">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="solicitaSelosResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+      <wsdl:fault name="JAXBException">
+        <soap:fault name="JAXBException" use="literal" />
+      </wsdl:fault>
+      <wsdl:fault name="IOException">
+        <soap:fault name="IOException" use="literal" />
+      </wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="statusSelo">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="statusSelo">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="statusSeloResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+      <wsdl:fault name="JAXBException">
+        <soap:fault name="JAXBException" use="literal" />
+      </wsdl:fault>
+      <wsdl:fault name="DatatypeConfigurationException">
+        <soap:fault name="DatatypeConfigurationException" use="literal" />
+      </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="SolicitacaoSeloService">
+    <wsdl:port binding="tns:SolicitacaoSeloServiceSoapBinding" name="SolicitacaoSeloServiceImplPort">
+      <soap:address location="http://TJSDP06:8080/wsselodigital/SolicitacaoSelo" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

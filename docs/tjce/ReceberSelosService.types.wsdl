@@ -1,0 +1,739 @@
+<?xml version='1.0' encoding='UTF-8'?><wsdl:definitions name="ReceberSelosService" targetNamespace="http://service.recebimento.selodigital.tjce.jus.br/" xmlns:ns1="http://service.recebimento.selodigital.tjce.jus.br/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <wsdl:types>
+<xs:schema targetNamespace="http://www.w3.org/2000/09/xmldsig#" version="1.0" xmlns:tns="http://www.w3.org/2000/09/xmldsig#" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<xs:element name="Signature" type="tns:SignatureType" />
+<xs:complexType name="SignatureType">
+<xs:sequence>
+<xs:element form="qualified" name="SignedInfo" type="tns:SignedInfoType" />
+<xs:element form="qualified" name="SignatureValue" type="tns:SignatureValueType" />
+<xs:element form="qualified" name="KeyInfo" type="tns:KeyInfoType" />
+</xs:sequence>
+<xs:attribute name="Id" type="xs:ID" />
+</xs:complexType>
+<xs:complexType name="SignedInfoType">
+<xs:sequence>
+<xs:element form="qualified" name="CanonicalizationMethod">
+<xs:complexType>
+<xs:sequence />
+<xs:attribute name="Algorithm" type="xs:anyURI" use="required" />
+</xs:complexType>
+</xs:element>
+<xs:element form="qualified" name="SignatureMethod">
+<xs:complexType>
+<xs:sequence />
+<xs:attribute name="Algorithm" type="xs:anyURI" use="required" />
+</xs:complexType>
+</xs:element>
+<xs:element form="qualified" name="Reference" type="tns:ReferenceType" />
+</xs:sequence>
+<xs:attribute name="Id" type="xs:ID" />
+</xs:complexType>
+<xs:complexType name="ReferenceType">
+<xs:sequence>
+<xs:element form="qualified" name="Transforms" type="tns:TransformsType" />
+<xs:element form="qualified" name="DigestMethod">
+<xs:complexType>
+<xs:sequence />
+<xs:attribute name="Algorithm" type="xs:anyURI" use="required" />
+</xs:complexType>
+</xs:element>
+<xs:element form="qualified" name="DigestValue" type="xs:base64Binary" />
+</xs:sequence>
+<xs:attribute name="Id" type="xs:ID" />
+<xs:attribute name="URI" type="xs:string" use="required" />
+<xs:attribute name="Type" type="xs:anyURI" />
+</xs:complexType>
+<xs:complexType name="TransformsType">
+<xs:sequence>
+<xs:element form="qualified" maxOccurs="unbounded" name="Transform" type="tns:TransformType" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TransformType">
+<xs:sequence>
+<xs:element form="qualified" maxOccurs="unbounded" minOccurs="0" name="XPath" type="xs:string" />
+</xs:sequence>
+<xs:attribute name="Algorithm" type="xs:string" use="required" />
+</xs:complexType>
+<xs:complexType name="SignatureValueType">
+<xs:simpleContent>
+<xs:extension base="xs:base64Binary">
+<xs:attribute name="Id" type="xs:ID" />
+</xs:extension>
+</xs:simpleContent>
+</xs:complexType>
+<xs:complexType name="KeyInfoType">
+<xs:sequence>
+<xs:element form="qualified" name="X509Data" type="tns:X509DataType" />
+</xs:sequence>
+<xs:attribute name="Id" type="xs:ID" />
+</xs:complexType>
+<xs:complexType name="X509DataType">
+<xs:sequence>
+<xs:element form="qualified" name="X509Certificate" type="xs:base64Binary" />
+</xs:sequence>
+</xs:complexType>
+</xs:schema>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="unqualified" targetNamespace="http://www.tjce.jus.br/selodigital/schemas" xmlns:ns1="http://www.w3.org/2000/09/xmldsig#" xmlns:tns="http://www.tjce.jus.br/selodigital/schemas" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<xs:import namespace="http://www.w3.org/2000/09/xmldsig#" />
+<xs:element name="autenticacao" type="tns:TAutenticacao" />
+<xs:element name="consultaMovimentacao" type="tns:TConsultaMovimentacao" />
+<xs:element name="consultaSolicitacao" type="tns:TConsultaChave" />
+<xs:element name="devolucaoSelo" type="tns:TDevolucaoSelo" />
+<xs:element name="generica" type="tns:CGenerica" />
+<xs:element name="movimentacaoAtos" type="tns:TMovimentacaoAtos" />
+<xs:element name="recFirmaTransferenciaVeiculo" type="tns:TReconhecimentoFirmaTranferenciaVeiculo" />
+<xs:element name="recFirmaTransferenciaVeiculoSinalPublico" type="tns:TReconhecimentoFirmaTranferenciaVeiculoSinalPublico" />
+<xs:element name="reconhecimentoFirmaPorAutenticidade" type="tns:TReconhecimentoFirmaPorAutenticidade" />
+<xs:element name="reconhecimentoFirmaPorSemelhanca" type="tns:TReconhecimentoFirmaPorSemelhanca" />
+<xs:element name="reconhecimentoFirmaSinalPublico" type="tns:TReconhecimentoFirmaSinalPublico" />
+<xs:element name="registroTituloDocumentoDUT" type="tns:TRegistroTituloDocumentoDUT" />
+<xs:element name="retDevolucaoSelo" type="tns:TRetDevolucaoSelo" />
+<xs:element name="retSelosDisponiveis" type="tns:TRetSelosDisponiveis" />
+<xs:element name="retSolicitacaoSeloProcessada" type="tns:TSolicitacaoSeloProcessada" />
+<xs:element name="selosDisponiveis" type="tns:TConsultaSelosDisponiveis" />
+<xs:element name="solicitacaoSelo" type="tns:TSolicitacaoSelo" />
+<xs:element name="statusSelo" type="tns:TStatusSelo" />
+<xs:complexType name="TConsultaChave">
+<xs:sequence>
+<xs:element name="cabecalho" type="tns:TCabecalho" />
+<xs:element name="chave" type="xs:string" />
+<xs:element minOccurs="0" ref="ns1:Signature" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TCabecalho">
+<xs:sequence>
+<xs:element name="versao" type="xs:string" />
+<xs:element name="dataHora" type="xs:dateTime" />
+<xs:element name="ambiente" type="xs:short" />
+<xs:element name="serventia" type="tns:TServentia" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TServentia">
+<xs:sequence>
+<xs:element name="codigoServentia" type="xs:string" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TSolicitacaoSeloProcessada">
+<xs:sequence>
+<xs:element name="cabecalho" type="tns:TCabecalho" />
+<xs:element minOccurs="0" name="itens" type="tns:TPacote" />
+<xs:element minOccurs="0" name="codigoRetorno" type="tns:TRetorno" />
+<xs:element minOccurs="0" ref="ns1:Signature" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TPacote">
+<xs:sequence>
+<xs:element maxOccurs="unbounded" name="itemSolicitacao" type="tns:TSelo" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TSelo">
+<xs:sequence>
+<xs:element name="sequencial" type="xs:short" />
+<xs:element name="status" type="tns:TRetorno" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="seloRecebimento" nillable="true" type="tns:RecebimentoSelo" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="selo" nillable="true" type="tns:Selo" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="pendencias" nillable="true" type="tns:TPendencia" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="bloqueios" nillable="true" type="tns:TBloqueio" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TRetorno">
+<xs:sequence>
+<xs:element name="codigo" type="xs:string" />
+<xs:element name="status" type="xs:int" />
+<xs:element name="mensagem" type="xs:string" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="RecebimentoSelo">
+<xs:sequence>
+<xs:element name="codigoSelo" type="tns:TCodigoSelo" />
+<xs:element minOccurs="0" name="numeroSerie" type="xs:string" />
+<xs:element minOccurs="0" name="validador" type="xs:string" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TCodigoSelo">
+<xs:sequence>
+<xs:element name="codigo" type="xs:int" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="Selo">
+<xs:sequence>
+<xs:element name="codigoSelo" type="tns:TCodigoSelo" />
+<xs:element minOccurs="0" name="numeroSerie" type="xs:string" />
+<xs:element minOccurs="0" name="validador" type="xs:string" />
+<xs:element minOccurs="0" name="valor" type="xs:double" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TPendencia">
+<xs:sequence>
+<xs:element name="sqPendencia" type="xs:string" />
+<xs:element minOccurs="0" name="mensagem" type="xs:string" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TBloqueio">
+<xs:sequence>
+<xs:element name="sqBloqueio" type="xs:string" />
+<xs:element minOccurs="0" name="mensagem" type="xs:string" />
+<xs:element minOccurs="0" name="observacao" type="xs:string" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TRetStatusSelo">
+<xs:sequence>
+<xs:element name="status" type="xs:int" />
+<xs:element name="mensagem" type="xs:string" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TRetHitoricoSolicitacao">
+<xs:sequence>
+<xs:element name="cabecalho" type="tns:TCabecalho" />
+<xs:element minOccurs="0" name="item" type="tns:TItemHitorico" />
+<xs:element minOccurs="0" name="codigoRetorno" type="tns:TRetorno" />
+<xs:element minOccurs="0" ref="ns1:Signature" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TItemHitorico">
+<xs:sequence>
+<xs:element maxOccurs="unbounded" name="solicitacao" type="tns:THistorico" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="THistorico">
+<xs:sequence>
+<xs:element name="data" type="xs:date" />
+<xs:element name="chave" type="xs:string" />
+<xs:element name="situacao" type="xs:string" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TRetDevolucaoSelo">
+<xs:sequence>
+<xs:element name="codigoRetorno" type="tns:TRetorno" />
+<xs:element minOccurs="0" name="idDevolucaoSelo" type="xs:int" />
+<xs:element name="itensDevolucaoSelo" type="tns:RetItensDevolucaoSelo" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="RetItensDevolucaoSelo">
+<xs:sequence>
+<xs:element maxOccurs="unbounded" name="itemDevolucaoSelo" type="tns:RetItemDevolucaoSelo" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="RetItemDevolucaoSelo">
+<xs:sequence>
+<xs:element name="sequencialDevolucaoSelo" type="xs:int" />
+<xs:element name="selo" type="tns:SeloDevolvido" />
+<xs:element name="codigoRetorno" type="xs:int" />
+<xs:element minOccurs="0" name="pendencias" type="tns:RetPendenciasItemDevolucaoSelo" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="SeloDevolvido">
+<xs:sequence>
+<xs:element name="codigoSelo" type="tns:TCodigoSelo" />
+<xs:element name="numeroSerie" type="xs:string" />
+<xs:element name="validador" type="xs:string" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="RetPendenciasItemDevolucaoSelo">
+<xs:sequence>
+<xs:element maxOccurs="unbounded" name="pendencia" type="tns:TPendencia" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="AtoSelado">
+<xs:complexContent>
+<xs:extension base="tns:Ato">
+<xs:sequence>
+<xs:element name="selo" type="tns:Selo" />
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:complexType name="Ato">
+<xs:sequence>
+<xs:element minOccurs="0" name="idAto" type="xs:long" />
+<xs:element minOccurs="0" name="dataAtoPraticado" type="xs:dateTime" />
+<xs:element name="dataAtoSolicitacao" type="xs:dateTime" />
+<xs:element minOccurs="0" name="valorDocumento" type="xs:decimal" />
+<xs:element name="valorEmolumento" type="xs:decimal" />
+<xs:element name="valorFermoju" type="xs:decimal" />
+<xs:element name="valorEmolumentoLivre" type="xs:decimal" />
+<xs:element name="numeroAtendimento" type="xs:string" />
+<xs:element name="tipoCobranca" type="xs:int" />
+<xs:element name="tipoMovimentacao" type="xs:int" />
+<xs:element name="responsavel" type="xs:string" />
+<xs:element minOccurs="0" name="quantidadeExtra" type="xs:int" />
+<xs:element name="codigoAto" type="xs:string" />
+<xs:element minOccurs="0" name="sqAtoRetificado" type="xs:long" />
+<xs:element minOccurs="0" name="registro" type="tns:Registro" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="Registro">
+<xs:sequence>
+<xs:element name="codigoLivro" type="xs:int" />
+<xs:element name="paginaInicial" type="xs:string" />
+<xs:element name="paginaFinal" type="xs:string" />
+<xs:element name="dataRegistro" type="xs:date" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TAutenticacao">
+<xs:complexContent>
+<xs:extension base="tns:AtoSelado">
+<xs:sequence>
+<xs:element name="solicitante" type="tns:PessoaResumo2" />
+<xs:element name="descricaoDocumento" type="tns:TDocumentoAto" />
+<xs:element minOccurs="0" name="ressalva" type="xs:string" />
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:complexType name="PessoaResumo2">
+<xs:sequence>
+<xs:choice maxOccurs="unbounded" minOccurs="0">
+<xs:element name="telefone" type="tns:Telefone" />
+<xs:element name="endereco" type="tns:Endereco" />
+</xs:choice>
+<xs:element maxOccurs="unbounded" minOccurs="0" name="email" nillable="true" type="tns:Email" />
+<xs:element minOccurs="0" name="nomePessoa" type="xs:string" />
+<xs:element minOccurs="0" name="documento" type="tns:Documento" />
+<xs:element minOccurs="0" name="cnpj" type="xs:string" />
+<xs:element minOccurs="0" name="nomeEmpresa" type="xs:string" />
+<xs:element minOccurs="0" name="nomeRepresentanteLegal" type="xs:string" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="Telefone">
+<xs:sequence>
+<xs:element name="tipoTelefone" type="xs:int" />
+<xs:element name="ddd" type="xs:string" />
+<xs:element name="numero" type="xs:string" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="Endereco">
+<xs:sequence>
+<xs:element minOccurs="0" name="tipoEndereco" type="xs:int" />
+<xs:element name="descricaoLogradouro" type="xs:string" />
+<xs:element name="numero" type="xs:string" />
+<xs:element name="bairro" type="xs:string" />
+<xs:element minOccurs="0" name="complemento" type="xs:string" />
+<xs:element minOccurs="0" name="cidade" type="xs:int" />
+<xs:element minOccurs="0" name="uf" type="xs:string" />
+<xs:element minOccurs="0" name="cep" type="xs:string" />
+<xs:element minOccurs="0" name="cidadeExterior" type="xs:string" />
+<xs:element minOccurs="0" name="pais" type="xs:int" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="Email">
+<xs:sequence>
+<xs:element name="tipoEmail" type="xs:int" />
+<xs:element name="enderecoEmail" type="xs:string" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="Documento">
+<xs:sequence>
+<xs:element name="tipoDocumento" type="xs:int" />
+<xs:element name="numero" type="xs:string" />
+<xs:element minOccurs="0" name="descricao" type="xs:string" />
+<xs:element minOccurs="0" name="orgaoEmissor" type="xs:string" />
+<xs:element minOccurs="0" name="dataEmissao" type="xs:date" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TDocumentoAto">
+<xs:sequence>
+<xs:element name="tipoDocumento" type="xs:int" />
+<xs:element name="descricao" type="xs:string" />
+<xs:element minOccurs="0" name="dataEmissao" type="xs:date" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TReconhecimentoFirmaPorAutenticidade">
+<xs:complexContent>
+<xs:extension base="tns:AtoSelado">
+<xs:sequence>
+<xs:element name="signatario" type="tns:PessoaResumo2" />
+<xs:element name="numeroCartaoAutografo" type="xs:string" />
+<xs:element name="deficienteVisual" type="xs:boolean" />
+<xs:element name="relativamenteIncapaz" type="xs:boolean" />
+<xs:element minOccurs="0" name="testemunhas" type="tns:TTestemunhas" />
+<xs:element minOccurs="0" name="paiOuResponsaveis" type="tns:TPaiOuResponsaveis" />
+<xs:element name="descricaoDocumento" type="tns:TDocumentoAto" />
+<xs:element minOccurs="0" name="ressalva" type="xs:string" />
+<xs:element name="assinaturaARogo" type="xs:boolean" />
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:complexType name="TTestemunhas">
+<xs:sequence>
+<xs:element maxOccurs="unbounded" name="testemunha" type="tns:PartePessoaResumo2" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="PartePessoaResumo2">
+<xs:sequence>
+<xs:element name="ordem" type="xs:int" />
+<xs:element name="tipoParte" type="xs:int" />
+<xs:element name="pessoaResumida" type="tns:PessoaResumo2" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TPaiOuResponsaveis">
+<xs:sequence>
+<xs:element maxOccurs="unbounded" name="paiOuResponsavel" type="tns:PartePessoaResumo2" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TReconhecimentoFirmaTranferenciaVeiculoSinalPublico">
+<xs:complexContent>
+<xs:extension base="tns:AtoSelado">
+<xs:sequence>
+<xs:element name="nomeSignatario" type="xs:string" />
+<xs:element name="nomeOficioSignatario" type="xs:string" />
+<xs:element name="numeroCartaoAutografoOuCensec" type="xs:string" />
+<xs:element name="descricaoDocumento" type="tns:TDocumentoAto" />
+<xs:element name="renavam" type="xs:string" />
+<xs:element name="numeroAtpvAtpve" type="xs:string" />
+<xs:element minOccurs="0" name="ressalva" type="xs:string" />
+<xs:element minOccurs="0" name="outrasPartes" type="tns:OutrasPartes" />
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:complexType name="OutrasPartes">
+<xs:sequence>
+<xs:element maxOccurs="unbounded" name="outraParte" type="tns:PartePessoaResumo2" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TReconhecimentoFirmaPorSemelhanca">
+<xs:complexContent>
+<xs:extension base="tns:AtoSelado">
+<xs:sequence>
+<xs:element name="signatario" type="tns:PessoaResumo2" />
+<xs:element name="numeroCartaoAutografo" type="xs:string" />
+<xs:element name="descricaoDocumento" type="tns:TDocumentoAto" />
+<xs:element minOccurs="0" name="ressalva" type="xs:string" />
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:complexType name="TReconhecimentoFirmaTranferenciaVeiculo">
+<xs:complexContent>
+<xs:extension base="tns:AtoSelado">
+<xs:sequence>
+<xs:element name="signatario" type="tns:PartePessoaResumo2" />
+<xs:element name="numeroCartaoAutografo" type="xs:string" />
+<xs:element name="deficienteVisual" type="xs:boolean" />
+<xs:element name="relativamenteIncapaz" type="xs:boolean" />
+<xs:element minOccurs="0" name="testemunhas" type="tns:TTestemunhas" />
+<xs:element minOccurs="0" name="paiOuResponsaveis" type="tns:TPaiOuResponsaveis" />
+<xs:element name="descricaoDocumento" type="tns:TDocumentoAto" />
+<xs:element name="renavam" type="xs:string" />
+<xs:element name="numeroAtpvAtpve" type="xs:string" />
+<xs:element minOccurs="0" name="ressalva" type="xs:string" />
+<xs:element name="assinaturaARogo" type="xs:boolean" />
+<xs:element minOccurs="0" name="compradorForaDoEstado" type="xs:boolean" />
+<xs:element minOccurs="0" name="outrasPartes" type="tns:OutrasPartes" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="seloOrigemVendedorOuSinalPublico" nillable="true" type="tns:Selo" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="seloFisicoVendedorOuComprador" nillable="true" type="xs:string" />
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:complexType name="TReconhecimentoFirmaSinalPublico">
+<xs:complexContent>
+<xs:extension base="tns:AtoSelado">
+<xs:sequence>
+<xs:element name="nomeSignatario" type="xs:string" />
+<xs:element name="nomeOficioSignatario" type="xs:string" />
+<xs:element minOccurs="0" name="numeroCartaoAutografoOuCensec" type="xs:string" />
+<xs:element name="descricaoDocumento" type="tns:TDocumentoAto" />
+<xs:element minOccurs="0" name="ressalva" type="xs:string" />
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:complexType name="CGenerica">
+<xs:complexContent>
+<xs:extension base="tns:AtoSelado">
+<xs:sequence>
+<xs:element maxOccurs="unbounded" minOccurs="0" name="observacoes" nillable="true" type="xs:string" />
+<xs:element maxOccurs="unbounded" name="partePessoa" type="tns:PartePessoa" />
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:complexType name="PartePessoa">
+<xs:sequence>
+<xs:element name="ordem" type="xs:int" />
+<xs:element name="tipoParte" type="xs:int" />
+<xs:element name="pessoa" type="tns:Pessoa" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="Pessoa">
+<xs:sequence>
+<xs:element maxOccurs="unbounded" minOccurs="0" name="endereco" nillable="true" type="tns:Endereco" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="telefone" nillable="true" type="tns:Telefone" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="email" nillable="true" type="tns:Email" />
+<xs:element minOccurs="0" name="nomePessoa" type="xs:string" />
+<xs:element minOccurs="0" name="estadoCivil" type="xs:int" />
+<xs:element minOccurs="0" name="profissao" type="xs:int" />
+<xs:element minOccurs="0" name="dataNascimento" type="xs:date" />
+<xs:element minOccurs="0" name="documento" type="tns:Documento" />
+<xs:element minOccurs="0" name="nacionalidade" type="xs:int" />
+<xs:element minOccurs="0" name="razaoSocial" type="xs:string" />
+<xs:element minOccurs="0" name="cnpj" type="xs:string" />
+<xs:element minOccurs="0" name="inscricaoEstadual" type="xs:string" />
+<xs:element minOccurs="0" name="nomeFantasia" type="xs:string" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TRegistroTituloDocumentoDUT">
+<xs:complexContent>
+<xs:extension base="tns:AtoSelado">
+<xs:sequence>
+<xs:element name="descricaoDocumento" type="tns:TDocumentoAto" />
+<xs:element name="imagemDutPdf" type="xs:base64Binary" />
+<xs:element name="numeroAtpvAtpve" type="xs:string" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="seloOrigemComprador" nillable="true" type="tns:Selo" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="seloOrigemVendedorOuSinalPublico" nillable="true" type="tns:Selo" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="seloFisicoVendedorOuComprador" nillable="true" type="xs:string" />
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:complexType name="SeloDisponivel">
+<xs:sequence>
+<xs:element name="codigoSelo" type="xs:int" />
+<xs:element name="saldo" type="xs:int" />
+<xs:element name="cota" type="xs:int" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TConsultaMovimentacao">
+<xs:sequence>
+<xs:element name="cabecalho" type="tns:TCabecalho" />
+<xs:element name="idLote" type="xs:long" />
+<xs:element minOccurs="0" name="idAto" type="xs:long" />
+<xs:element minOccurs="0" ref="ns1:Signature" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="THistoricoSolicitacao">
+<xs:sequence>
+<xs:element name="cabecalho" type="tns:TCabecalho" />
+<xs:element name="inicioPeriodo" type="xs:date" />
+<xs:element name="finalPeriodo" type="xs:date" />
+<xs:element minOccurs="0" ref="ns1:Signature" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="PessoaResumo">
+<xs:sequence>
+<xs:element name="nomePessoa" type="xs:string" />
+<xs:element name="tipoPessoa" type="xs:string" />
+<xs:element minOccurs="0" name="estadoCivil" type="xs:int" />
+<xs:element minOccurs="0" name="profissao" type="xs:int" />
+<xs:element name="nacionalidade" type="xs:int" />
+<xs:element minOccurs="0" name="dataNascimento" type="xs:date" />
+<xs:element name="documento" type="tns:Documento" />
+<xs:element name="endereco" type="tns:Endereco" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="telefone" nillable="true" type="tns:Telefone" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="email" nillable="true" type="tns:Email" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TRetornoAto">
+<xs:sequence>
+<xs:element minOccurs="0" name="idAto" type="xs:long" />
+<xs:element minOccurs="0" name="statusFalha" type="tns:TRetorno" />
+<xs:element minOccurs="0" name="sqAto" type="xs:long" />
+<xs:element minOccurs="0" name="idLote" type="xs:long" />
+<xs:element minOccurs="0" name="statusAto" type="xs:int" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="pendencias" nillable="true" type="tns:TPendencia" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TPacoteSolicitacao">
+<xs:sequence>
+<xs:element maxOccurs="unbounded" name="itemSolicitacao" type="tns:TSeloSolicitacao" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TSeloSolicitacao">
+<xs:sequence>
+<xs:element name="sequencial" type="xs:short" />
+<xs:element name="codigoSelo" type="tns:TCodigoSelo" />
+<xs:element name="quantidade" type="xs:int" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TRetConsultaChave">
+<xs:sequence>
+<xs:element name="cabecalho" type="tns:TCabecalho" />
+<xs:element name="chave" type="xs:string" />
+<xs:element ref="ns1:Signature" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TItemSolicitacao">
+<xs:sequence>
+<xs:element name="sequencial" type="xs:int" />
+<xs:element name="codigoSelo" type="xs:int" />
+<xs:element name="quantidade" type="xs:int" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TTipoPessoa">
+<xs:sequence>
+<xs:element minOccurs="0" name="fisica" type="xs:short" />
+<xs:element minOccurs="0" name="juridica" type="xs:short" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TRetMovimentacaoAtos">
+<xs:sequence>
+<xs:element name="cabecalho" type="tns:TCabecalho" />
+<xs:element minOccurs="0" name="codigoRetorno" type="tns:TRetorno" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="itensLote" nillable="true" type="tns:TRetornoAto" />
+<xs:element minOccurs="0" ref="ns1:Signature" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TSolicitacaoSelo">
+<xs:sequence>
+<xs:element name="cabecalho" type="tns:TCabecalho" />
+<xs:element name="solicitante" type="tns:TPessoaSolicitacao" />
+<xs:element name="idSolicitacaoSelo" type="xs:int" />
+<xs:element name="itens" type="tns:TPacoteSolicitacao" />
+<xs:element minOccurs="0" ref="ns1:Signature" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TPessoaSolicitacao">
+<xs:sequence>
+<xs:element name="nomePessoa" type="xs:string" />
+<xs:element name="documento" type="tns:Documento" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="telefone" nillable="true" type="tns:Telefone" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="email" nillable="true" type="tns:Email" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TConsultaSelosDisponiveis">
+<xs:sequence>
+<xs:element name="cabecalho" type="tns:TCabecalho" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="ItemDevolucaoSelo">
+<xs:sequence>
+<xs:element name="sequencialDevolucaoSelo" type="xs:int" />
+<xs:element name="motivoDevolucao" type="xs:string" />
+<xs:element name="selo" type="tns:SeloDevolvido" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="DevolucaoSelo">
+<xs:sequence>
+<xs:element name="idDevolucaoSelo" type="xs:int" />
+<xs:element name="itensDevolucaoSelo" type="tns:ItensDevolucaoSelo" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="ItensDevolucaoSelo">
+<xs:sequence>
+<xs:element maxOccurs="unbounded" name="itemDevolucaoSelo" type="tns:ItemDevolucaoSelo" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TSeloAtoSelado">
+<xs:sequence>
+<xs:element name="selo" type="tns:Selo" />
+<xs:element name="valorSelo" type="xs:decimal" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TRetSolicitacaoSelo">
+<xs:sequence>
+<xs:element name="cabecalho" type="tns:TCabecalho" />
+<xs:element minOccurs="0" name="codigoRetorno" type="tns:TRetorno" />
+<xs:element minOccurs="0" name="chave" type="xs:string" />
+<xs:element ref="ns1:Signature" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TItemPendencia">
+<xs:sequence>
+<xs:element maxOccurs="unbounded" name="pendencia" type="tns:TPendencia" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TStatusSelo">
+<xs:sequence>
+<xs:element name="codigoServentia" type="xs:string" />
+<xs:element name="numeroSelo" type="xs:string" />
+<xs:element name="validador" type="xs:string" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TRetSelosDisponiveis">
+<xs:sequence>
+<xs:element name="cabecalho" type="tns:TCabecalho" />
+<xs:element maxOccurs="unbounded" minOccurs="0" name="selosDisponiveis" nillable="true" type="tns:SeloDisponivel" />
+<xs:element minOccurs="0" name="codigoRetorno" type="tns:TRetorno" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TRetEntregaSelos">
+<xs:sequence>
+<xs:element name="cabecalho" type="tns:TCabecalho" />
+<xs:element minOccurs="0" name="codigoRetorno" type="tns:TRetorno" />
+<xs:element minOccurs="0" name="chave" type="xs:string" />
+<xs:element minOccurs="0" ref="ns1:Signature" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TDevolucaoSelo">
+<xs:sequence>
+<xs:element name="cabecalho" type="tns:TCabecalho" />
+<xs:element name="informante" type="xs:string" />
+<xs:element name="devolucaoSelo" type="tns:DevolucaoSelo" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="TMovimentacaoAtos">
+<xs:sequence>
+<xs:element name="cabecalho" type="tns:TCabecalho" />
+<xs:element name="informante" type="xs:string" />
+<xs:element maxOccurs="unbounded" name="atos" type="tns:Ato" />
+<xs:element name="idLote" type="xs:long" />
+<xs:element minOccurs="0" ref="ns1:Signature" />
+</xs:sequence>
+</xs:complexType>
+</xs:schema>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="unqualified" targetNamespace="http://service.recebimento.selodigital.tjce.jus.br/" xmlns:ns1="http://www.tjce.jus.br/selodigital/schemas" xmlns:tns="http://service.recebimento.selodigital.tjce.jus.br/" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<xs:import namespace="http://www.tjce.jus.br/selodigital/schemas" />
+<xs:element name="receberSelos" type="tns:receberSelos" />
+<xs:element name="receberSelosResponse" type="tns:receberSelosResponse" />
+<xs:complexType name="receberSelos">
+<xs:sequence>
+<xs:element minOccurs="0" name="arg0" type="ns1:TConsultaChave" />
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="receberSelosResponse">
+<xs:sequence>
+<xs:element minOccurs="0" name="return" type="ns1:TSolicitacaoSeloProcessada" />
+</xs:sequence>
+</xs:complexType>
+<xs:element name="FileNotFoundException" type="tns:FileNotFoundException" />
+<xs:complexType name="FileNotFoundException">
+<xs:sequence />
+</xs:complexType>
+<xs:element name="JAXBException" type="tns:JAXBException" />
+<xs:complexType name="JAXBException">
+<xs:sequence />
+</xs:complexType>
+<xs:element name="IOException" type="tns:IOException" />
+<xs:complexType name="IOException">
+<xs:sequence />
+</xs:complexType>
+</xs:schema>
+  </wsdl:types>
+  <wsdl:message name="FileNotFoundException">
+    <wsdl:part element="ns1:FileNotFoundException" name="FileNotFoundException">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="receberSelos">
+    <wsdl:part element="ns1:receberSelos" name="parameters">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="receberSelosResponse">
+    <wsdl:part element="ns1:receberSelosResponse" name="parameters">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="IOException">
+    <wsdl:part element="ns1:IOException" name="IOException">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="JAXBException">
+    <wsdl:part element="ns1:JAXBException" name="JAXBException">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="ReceberSelosService">
+    <wsdl:operation name="receberSelos">
+      <wsdl:input message="ns1:receberSelos" name="receberSelos">
+    </wsdl:input>
+      <wsdl:output message="ns1:receberSelosResponse" name="receberSelosResponse">
+    </wsdl:output>
+      <wsdl:fault message="ns1:JAXBException" name="JAXBException">
+    </wsdl:fault>
+      <wsdl:fault message="ns1:IOException" name="IOException">
+    </wsdl:fault>
+      <wsdl:fault message="ns1:FileNotFoundException" name="FileNotFoundException">
+    </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:portType>
+</wsdl:definitions>

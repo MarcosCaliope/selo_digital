@@ -409,26 +409,52 @@ module SeloDigital
       result
     end
 
+    # Formato confirmado em 2026-07-17 contra o WSDL/XSD real de SolicitacaoSelo
+    # (baixado do TJCE produção do mesmo jeito que docs/tjce/ — ver
+    # SolicitacaoSeloService.types.wsdl, TRetSolicitacaoSelo): <return>
+    # (cabecalho, codigoRetorno > codigo/status/mensagem, chave) — segue sim o
+    # mesmo formato codigoRetorno > codigo/status/mensagem das outras operações
+    # (ao contrário do que este método achava antes, quando foi escrito só por
+    # engenharia reversa do PHP legado, sem o XSD em mãos).
     def parse_solicita_selos(xml)
       raise SeloDigital::Error, "Resposta vazia do servidor" if xml.blank?
 
       doc = Nokogiri::XML(xml)
       doc.remove_namespaces!
 
-      # A resposta do TJCE para essa operação não segue o mesmo formato
-      # codigoRetorno > codigo/status/mensagem das outras — busca direta no
-      # documento inteiro, replicando o que o PHP legado faz (AUTOsolicitar_selos.php).
+      fault = doc.at_xpath("//Fault")
+      if fault
+        raise SeloDigital::Error, fault.at_xpath("faultstring")&.text.presence || "Falha SOAP ao solicitar selos"
+      end
+
+      ret = doc.at_xpath("//return")
+      retorno = ret&.at_xpath("codigoRetorno")
       {
-        codigo:    doc.at_xpath("//codigo")&.text,
-        mensagem:  doc.at_xpath("//mensagem")&.text,
-        chave:     doc.at_xpath("//chave")&.text,
-        data_hora: doc.at_xpath("//dataHora")&.text
+        codigo:    retorno&.at_xpath("codigo")&.text,
+        mensagem:  retorno&.at_xpath("mensagem")&.text,
+        chave:     ret&.at_xpath("chave")&.text,
+        data_hora: ret&.at_xpath("cabecalho/dataHora")&.text
       }
     end
 
+    # Formato confirmado em 2026-07-17 contra o WSDL/XSD real de ReceberSelos
+    # (ver ReceberSelosService.types.wsdl, TSolicitacaoSeloProcessada): <return>
+    # é cabecalho + itens (TPacote > itemSolicitacao, um por sequencial) +
+    # codigoRetorno opcional (só em erro global). Cada <seloRecebimento> fica
+    # DENTRO de <itens><itemSolicitacao>, não direto em <return> — a versão
+    # anterior buscava `ret.xpath("seloRecebimento")` (só filho direto),
+    # que nunca batia com nada; `selos` sempre vinha vazio e Solicitacao#receber!
+    # falhava sempre, mesmo numa resposta de sucesso de verdade.
     def parse_receber_selos(xml)
+      raise SeloDigital::Error, "Resposta vazia do servidor" if xml.blank?
+
       doc = Nokogiri::XML(xml)
       doc.remove_namespaces!
+
+      fault = doc.at_xpath("//Fault")
+      if fault
+        raise SeloDigital::Error, fault.at_xpath("faultstring")&.text.presence || "Falha SOAP ao receber selos"
+      end
 
       ret = doc.at_xpath("//return")
       raise SeloDigital::Error, "Resposta vazia do servidor" unless ret
@@ -441,7 +467,7 @@ module SeloDigital
         selos:    []
       }
 
-      ret.xpath("seloRecebimento").each do |s|
+      ret.xpath("itens/itemSolicitacao/seloRecebimento").each do |s|
         result[:selos] << {
           numero_serie: s.at_xpath("numeroSerie")&.text&.strip,
           validador:    s.at_xpath("validador")&.text&.strip,

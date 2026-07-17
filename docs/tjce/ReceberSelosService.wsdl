@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8'?><wsdl:definitions name="ReceberSelosService" targetNamespace="http://impl.service.recebimento.selodigital.tjce.jus.br/" xmlns:ns1="http://service.recebimento.selodigital.tjce.jus.br/" xmlns:ns2="http://schemas.xmlsoap.org/soap/http" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://impl.service.recebimento.selodigital.tjce.jus.br/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <wsdl:import location="https://selodigital.tjce.jus.br/wsselodigital/ReceberSelos?wsdl=ReceberSelosService.wsdl" namespace="http://service.recebimento.selodigital.tjce.jus.br/">
+    </wsdl:import>
+  <wsdl:binding name="ReceberSelosServiceSoapBinding" type="ns1:ReceberSelosService">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="receberSelos">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input name="receberSelos">
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output name="receberSelosResponse">
+        <soap:body use="literal" />
+      </wsdl:output>
+      <wsdl:fault name="JAXBException">
+        <soap:fault name="JAXBException" use="literal" />
+      </wsdl:fault>
+      <wsdl:fault name="IOException">
+        <soap:fault name="IOException" use="literal" />
+      </wsdl:fault>
+      <wsdl:fault name="FileNotFoundException">
+        <soap:fault name="FileNotFoundException" use="literal" />
+      </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="ReceberSelosService">
+    <wsdl:port binding="tns:ReceberSelosServiceSoapBinding" name="ReceberSelosServiceImplPort">
+      <soap:address location="http://TJSDP06:8080/wsselodigital/ReceberSelos" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
