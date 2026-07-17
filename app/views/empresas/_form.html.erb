@@ -86,6 +86,12 @@
       </label>
       <span class="sd-field-hint">Marque para testar contra o ambiente de homologação em vez de produção. O certificado precisa estar cadastrado pelo TJCE também nessa base.</span>
     </div>
+
+    <div class="sd-field">
+      <%= f.label :intervalo_envio_minutos, "Envio automático de atos (minutos)" %>
+      <%= f.number_field :intervalo_envio_minutos, min: 0, step: 1 %>
+      <span class="sd-field-hint">0 = envio manual (padrão). Maior que 0 = envia a fila de atos pendentes ao TJCE automaticamente a cada esse número de minutos.</span>
+    </div>
   </div>
 
   <div class="sd-form-grid">

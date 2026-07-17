@@ -49,7 +49,7 @@ class EmpresasController < ApplicationController
       :snomeempresa, :sfantasia, :sendereco, :sbairro, :scidade, :sestado, :scep,
       :snocnpj, :snocgf, :sfone1, :sfone2, :semail,
       :snomeresponsavel, :snocpfresponsavel, :codigo_serventia, :homologacao,
-      :certificado_digital_upload, :senha_certificado_digital
+      :certificado_digital_upload, :senha_certificado_digital, :intervalo_envio_minutos
     )
     # Campo de senha em branco significa "manter a senha atual" — não sobrescrever.
     permitted.delete(:senha_certificado_digital) if permitted[:senha_certificado_digital].blank?

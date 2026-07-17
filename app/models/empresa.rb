@@ -15,6 +15,12 @@ class Empresa < ApplicationRecord
   # responsável são usados como "informante"/"solicitante" nas operações de escrita
   # (solicita_selos, movimentar_atos) — não fazem diferença em consulta_selos_disponiveis
   # nem receber_selos.
+  # 0 (padrão) = envio manual; >0 = EnvioAutomaticoAtosJob envia a fila de
+  # pendentes a cada intervalo_envio_minutos minutos.
+  def envio_automatico?
+    intervalo_envio_minutos.to_i > 0
+  end
+
   def selo_digital_client
     ddd, telefone = telefone_ddd_numero(sfone1)
 

@@ -7,6 +7,7 @@ class MovimentacaoController < ApplicationController
     @lotes = Lote.emitidos_hoje.to_a
     @tipos_selo = TipoSelo.com_estoque_local
     @solicitacoes = Solicitacao.pendentes.to_a
+    @empresa = Empresa.first
   end
 
   # Sem quantidade: pedido automático de qte_pedido (só permitido abaixo do

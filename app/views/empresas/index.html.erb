@@ -21,6 +21,7 @@
           <th>CNPJ</th>
           <th>Certificado</th>
           <th>Ambiente</th>
+          <th>Envio automático</th>
           <th></th>
         </tr>
       </thead>
@@ -41,6 +42,13 @@
                 <span class="sd-badge" style="background:#fffbeb;color:#92400e;border-color:#fcd34d;">Homologação</span>
               <% else %>
                 <span class="sd-field-hint">Produção</span>
+              <% end %>
+            </td>
+            <td>
+              <% if empresa.envio_automatico? %>
+                <span class="sd-badge">A cada <%= empresa.intervalo_envio_minutos %> min</span>
+              <% else %>
+                <span class="sd-field-hint">Manual</span>
               <% end %>
             </td>
             <td><%= link_to "Editar", edit_empresa_path(empresa) %></td>

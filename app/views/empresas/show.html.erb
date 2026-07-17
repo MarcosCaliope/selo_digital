@@ -33,6 +33,14 @@
           <span class="sd-field-hint">Não cadastrado</span>
         <% end %>
       </div>
+      <div class="sd-field">
+        <label>Envio automático de atos</label>
+        <% if @empresa.envio_automatico? %>
+          <span class="sd-badge">A cada <%= @empresa.intervalo_envio_minutos %> min</span>
+        <% else %>
+          <span class="sd-field-hint">Manual</span>
+        <% end %>
+      </div>
     </div>
   </div>
 

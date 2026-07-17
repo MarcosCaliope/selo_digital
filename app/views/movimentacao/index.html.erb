@@ -13,6 +13,16 @@
     </div>
   </div>
 
+  <% if @empresa&.envio_automatico? %>
+    <div class="sd-alert sd-alert--info">
+      <span class="sd-alert__icon">⏱</span>
+      <div>
+        <strong>Envio automático ativo</strong>
+        <p>Atos pendentes são enviados ao TJCE automaticamente a cada <%= @empresa.intervalo_envio_minutos %> minuto(s). <%= link_to "Configurar", edit_empresa_path(@empresa) %>.</p>
+      </div>
+    </div>
+  <% end %>
+
   <div class="sd-dashboard-grid">
     <div>
       <div class="sd-panel">
