@@ -165,12 +165,33 @@ module SeloDigital
     # o lote vazio primeiro, lê de volta o id, só então monta e envia o envelope).
     # O chamador (Lote.enviar_atos!) precisa seguir a mesma ordem: criar o Lote
     # antes de chamar isto aqui, para ter um id real e único para passar.
+    #
+    # <idAto> é só uma chave de correlação (ecoada de volta em cada item de
+    # <itensLote>, ver parse_movimentar_atos) — mas o TJCE trata reenvio do
+    # mesmo valor como duplicidade ("MSG034: O idAto já foi enviado
+    # anteriormente por essa serventia"), igual ao que já tinha acontecido com
+    # <idLote> (ver Lote.enviar_atos!). ato.id sozinho não serve porque não
+    # muda entre o envio original e uma retificação da mesma linha — usar
+    # id_lote (sempre novo a cada tentativa, mesma garantia do fix do idLote)
+    # combinado com a posição do ato na lista gera um valor sempre inédito.
+    # Traduzido de volta pro ato.id real em parse_movimentar_atos, então o
+    # contrato de retorno pra quem chama (Lote.enviar_atos!) não muda.
+    ID_ATO_MULTIPLICADOR = 100_000
+    private_constant :ID_ATO_MULTIPLICADOR
+
     def movimentar_atos(atos:, id_lote:)
+      ato_id_por_id_ato_sintetico = {}
+      atos_xml = atos.each_with_index.map do |ato, indice|
+        id_ato_sintetico = (id_lote * ID_ATO_MULTIPLICADOR) + indice
+        ato_id_por_id_ato_sintetico[id_ato_sintetico] = ato.id
+        ato_xml(ato, id_ato_sintetico)
+      end.join
+
       corpo = <<~XML
         <arg0>
           #{cabecalho}
           <informante>#{@informante_cpf}</informante>
-          #{atos.map { |ato| ato_xml(ato) }.join}
+          #{atos_xml}
           <idLote>#{id_lote}</idLote>
         </arg0>
       XML
@@ -181,7 +202,7 @@ module SeloDigital
         extra_xmlns: %( xmlns:xsi="#{NAMESPACE_XSI}" xmlns:ns3="#{NAMESPACE_SCHEMA}")
       )
       endpoint = @homologacao ? ENDPOINT_MOVIMENTACAO_HOMOLOGACAO : ENDPOINT_MOVIMENTACAO_PRODUCAO
-      parse_movimentar_atos(post(endpoint, xml))
+      parse_movimentar_atos(post(endpoint, xml), ato_id_por_id_ato_sintetico)
     end
 
     private
@@ -230,7 +251,7 @@ module SeloDigital
     # pessoa, ex.: "R & A COMERCIAL LTDA", existe aos milhares em cbl_dev) e os
     # demais agora podem vir de edição manual do usuário — sem isso um valor
     # com "&"/"<" quebraria o XML.
-    def ato_xml(ato)
+    def ato_xml(ato, id_ato_sintetico)
       sq_ato_retificado = ato.retificacao? ? "<sqAtoRetificado>#{ato.sqAto_idOriginal}</sqAtoRetificado>\n  " : ""
       parte = ato.parte_pessoa_dados || {}
       nome_pessoa = CGI.escapeHTML(parte[:nome].presence || "Generico")
@@ -270,7 +291,7 @@ module SeloDigital
           <tipoCobranca>#{ato.tipoCobranca}</tipoCobranca>
           <quantidadeExtra>#{ato.quantidadeExtra}</quantidadeExtra>
           <responsavel>#{@informante_cpf}</responsavel>
-          <idAto>#{ato.id}</idAto>
+          <idAto>#{id_ato_sintetico}</idAto>
           <partePessoa>
             <ordem>1</ordem>
             <tipoParte>1</tipoParte>
@@ -429,7 +450,7 @@ module SeloDigital
       result
     end
 
-    def parse_movimentar_atos(xml)
+    def parse_movimentar_atos(xml, ato_id_por_id_ato_sintetico)
       raise SeloDigital::Error, "Resposta vazia do servidor" if xml.blank?
 
       doc = Nokogiri::XML(xml)
@@ -452,10 +473,12 @@ module SeloDigital
 
       itens = []
       doc.xpath("//itensLote").each do |item|
+        id_ato_sintetico = item.at_xpath("idAto")&.text&.to_i
+        id_ato = ato_id_por_id_ato_sintetico[id_ato_sintetico]
         falha = item.at_xpath("statusFalha")
         if falha
           itens << {
-            id_ato:        item.at_xpath("idAto")&.text&.to_i,
+            id_ato:        id_ato,
             falha:         true,
             sq_ato_tj:     nil,
             status_ato_tj: falha.at_xpath("status")&.text,
@@ -463,7 +486,7 @@ module SeloDigital
           }
         else
           itens << {
-            id_ato:        item.at_xpath("idAto")&.text&.to_i,
+            id_ato:        id_ato,
             falha:         false,
             sq_ato_tj:     item.at_xpath("sqAto")&.text,
             status_ato_tj: item.at_xpath("statusAto")&.text
