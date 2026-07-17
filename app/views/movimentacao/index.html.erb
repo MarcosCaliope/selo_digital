@@ -53,7 +53,7 @@
                     <td><%= ato.id_ato.to_i %></td>
                     <td>
                       <% if ato.retificacao? %>
-                        <%= link_to "Editar parte", editar_retificacao_parte_movimentacao_path(ato), class: "sd-btn sd-btn--secondary" %>
+                        <%= link_to "Editar retificação", editar_retificacao_movimentacao_path(ato), class: "sd-btn sd-btn--secondary" %>
                       <% end %>
                     </td>
                   </tr>

@@ -13,77 +13,156 @@
     <%= link_to "Cancelar", movimentacao_path, class: "sd-btn sd-btn--secondary" %>
   </div>
 
-  <% if @ato.errors.any? %>
+  <% if @ato.errors.any? || @parte.errors.any? %>
     <div class="sd-errors">
-      <strong><%= pluralize(@ato.errors.count, "erro") %> impediram o salvamento:</strong>
+      <strong><%= pluralize(@ato.errors.count + @parte.errors.count, "erro") %> impediram o salvamento:</strong>
       <ul>
-        <% @ato.errors.each do |error| %>
+        <% (@ato.errors.to_a + @parte.errors.to_a).each do |error| %>
           <li><%= error.full_message %></li>
         <% end %>
       </ul>
     </div>
   <% end %>
 
-  <%= form_with model: @ato, url: retificar_movimentacao_path(@ato), method: :patch, local: true, html: { class: "sd-form" } do |f| %>
-    <div class="sd-form-grid">
-      <div class="sd-field">
-        <%= f.label :codigo_ato, "Código do ato" %>
-        <%= f.text_field :codigo_ato %>
-      </div>
+  <%= form_with url: retificar_movimentacao_path(@ato), method: :patch, local: true, html: { class: "sd-form" } do %>
+    <h2 class="sd-form-section">Dados do ato</h2>
+    <%= fields_for :ato_praticado, @ato do |f| %>
+      <div class="sd-form-grid">
+        <div class="sd-field">
+          <%= f.label :codigo_ato, "Código do ato" %>
+          <%= f.text_field :codigo_ato %>
+        </div>
 
-      <div class="sd-field">
-        <%= f.label :tipoMovimentacao, "Tipo de movimentação" %>
-        <%= f.text_field :tipoMovimentacao %>
-      </div>
+        <div class="sd-field">
+          <%= f.label :tipoMovimentacao, "Tipo de movimentação" %>
+          <%= f.text_field :tipoMovimentacao %>
+        </div>
 
-      <div class="sd-field">
-        <%= f.label :dataAtoPraticado, "Data do ato praticado" %>
-        <%= f.date_field :dataAtoPraticado %>
-      </div>
+        <div class="sd-field">
+          <%= f.label :dataAtoPraticado, "Data do ato praticado" %>
+          <%= f.date_field :dataAtoPraticado %>
+        </div>
 
-      <div class="sd-field">
-        <%= f.label :dataAtoSolicitacao, "Data do ato solicitado" %>
-        <%= f.date_field :dataAtoSolicitacao %>
-      </div>
+        <div class="sd-field">
+          <%= f.label :dataAtoSolicitacao, "Data do ato solicitado" %>
+          <%= f.date_field :dataAtoSolicitacao %>
+        </div>
 
-      <div class="sd-field">
-        <%= f.label :valorEmolumento, "Valor emolumento" %>
-        <%= f.text_field :valorEmolumento %>
-      </div>
+        <div class="sd-field">
+          <%= f.label :valorEmolumento, "Valor emolumento" %>
+          <%= f.text_field :valorEmolumento %>
+        </div>
 
-      <div class="sd-field">
-        <%= f.label :valorEmolumentoLivre, "Valor emolumento livre" %>
-        <%= f.text_field :valorEmolumentoLivre %>
-      </div>
+        <div class="sd-field">
+          <%= f.label :valorEmolumentoLivre, "Valor emolumento livre" %>
+          <%= f.text_field :valorEmolumentoLivre %>
+        </div>
 
-      <div class="sd-field">
-        <%= f.label :valorDocumento, "Valor documento" %>
-        <%= f.text_field :valorDocumento %>
-      </div>
+        <div class="sd-field">
+          <%= f.label :valorDocumento, "Valor documento" %>
+          <%= f.text_field :valorDocumento %>
+        </div>
 
-      <div class="sd-field">
-        <%= f.label :valorFermoju, "Valor FERMOJU" %>
-        <%= f.text_field :valorFermoju %>
-      </div>
+        <div class="sd-field">
+          <%= f.label :valorFermoju, "Valor FERMOJU" %>
+          <%= f.text_field :valorFermoju %>
+        </div>
 
-      <div class="sd-field">
-        <%= f.label :numeroTalao, "Número do talão (numeroAtendimento)" %>
-        <%= f.text_field :numeroTalao %>
-      </div>
+        <div class="sd-field">
+          <%= f.label :numeroTalao, "Número do talão (numeroAtendimento)" %>
+          <%= f.text_field :numeroTalao %>
+        </div>
 
-      <div class="sd-field">
-        <%= f.label :tipoCobranca, "Tipo de cobrança" %>
-        <%= f.text_field :tipoCobranca %>
-      </div>
+        <div class="sd-field">
+          <%= f.label :tipoCobranca, "Tipo de cobrança" %>
+          <%= f.text_field :tipoCobranca %>
+        </div>
 
-      <div class="sd-field">
-        <%= f.label :quantidadeExtra, "Quantidade extra" %>
-        <%= f.text_field :quantidadeExtra %>
+        <div class="sd-field">
+          <%= f.label :quantidadeExtra, "Quantidade extra" %>
+          <%= f.text_field :quantidadeExtra %>
+        </div>
       </div>
-    </div>
+    <% end %>
+
+    <h2 class="sd-form-section">Dados da parte (partePessoa)</h2>
+    <p class="sd-field-hint" style="margin: -0.5rem 0 1rem;">
+      Deixe em branco pra manter o dado automático (real, quando disponível para este tipo de ato) ou o
+      placeholder genérico que a produção já usa hoje.
+    </p>
+    <%= fields_for :retificacao_parte, @parte do |g| %>
+      <div class="sd-form-grid">
+        <div class="sd-field sd-field--full">
+          <%= g.label :nome_pessoa, "Nome" %>
+          <%= g.text_field :nome_pessoa %>
+        </div>
+
+        <div class="sd-field">
+          <%= g.label :tipo_documento, "Tipo de documento" %>
+          <%= g.select :tipo_documento,
+              [ [ "CPF", AtoPraticado::TIPO_DOCUMENTO_CPF ], [ "CNPJ", AtoPraticado::TIPO_DOCUMENTO_CNPJ ] ],
+              include_blank: true %>
+        </div>
+
+        <div class="sd-field">
+          <%= g.label :numero_documento, "Número do documento" %>
+          <%= g.text_field :numero_documento %>
+        </div>
+
+        <div class="sd-field">
+          <%= g.label :descricao_documento, "Descrição do documento" %>
+          <%= g.text_field :descricao_documento %>
+        </div>
+
+        <div class="sd-field">
+          <%= g.label :orgao_emissor, "Órgão emissor" %>
+          <%= g.text_field :orgao_emissor %>
+        </div>
+
+        <div class="sd-field">
+          <%= g.label :data_emissao_documento, "Data de emissão" %>
+          <%= g.date_field :data_emissao_documento %>
+        </div>
+
+        <div class="sd-field sd-field--full">
+          <%= g.label :descricao_logradouro, "Logradouro" %>
+          <%= g.text_field :descricao_logradouro %>
+        </div>
+
+        <div class="sd-field">
+          <%= g.label :numero_endereco, "Número" %>
+          <%= g.text_field :numero_endereco %>
+        </div>
+
+        <div class="sd-field">
+          <%= g.label :complemento, "Complemento" %>
+          <%= g.text_field :complemento %>
+        </div>
+
+        <div class="sd-field">
+          <%= g.label :bairro, "Bairro" %>
+          <%= g.text_field :bairro %>
+        </div>
+
+        <div class="sd-field">
+          <%= g.label :cidade, "Cidade (código IBGE)" %>
+          <%= g.text_field :cidade %>
+        </div>
+
+        <div class="sd-field">
+          <%= g.label :uf, "UF (código IBGE)" %>
+          <%= g.text_field :uf %>
+        </div>
+
+        <div class="sd-field">
+          <%= g.label :cep, "CEP" %>
+          <%= g.text_field :cep %>
+        </div>
+      </div>
+    <% end %>
 
     <div style="padding: 0.75rem 1rem;">
-      <%= f.submit "Marcar como retificação e devolver à fila", class: "sd-btn",
+      <%= submit_tag "Marcar como retificação e devolver à fila", class: "sd-btn",
           data: { turbo_confirm: "Marcar o ato #{@ato.id} para retificação? Ele volta para a fila de envio e será reenviado ao TJCE referenciando o sqAto original." } %>
     </div>
   <% end %>

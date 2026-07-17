@@ -16,8 +16,6 @@ Rails.application.routes.draw do
   post "movimentacao/enviar_atos", to: "movimentacao#enviar_atos", as: :enviar_atos_movimentacao
   get "movimentacao/atos/:id/retificar", to: "movimentacao#editar_retificacao", as: :editar_retificacao_movimentacao
   patch "movimentacao/atos/:id/retificar", to: "movimentacao#retificar", as: :retificar_movimentacao
-  get "movimentacao/atos/:id/retificar/parte", to: "movimentacao#editar_retificacao_parte", as: :editar_retificacao_parte_movimentacao
-  patch "movimentacao/atos/:id/retificar/parte", to: "movimentacao#retificar_parte", as: :retificar_parte_movimentacao
   resources :empresas
   root "selos#index"
 end

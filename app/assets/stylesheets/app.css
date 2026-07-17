@@ -147,6 +147,8 @@ body {
 
 /* Form */
 .sd-form { background: #fff; border-radius: 10px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.sd-form-section { font-size: 1rem; font-weight: 700; color: #1a1a2e; margin-bottom: 0.75rem; }
+.sd-form-section:not(:first-child) { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #f0f0f0; }
 .sd-form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem 1.25rem; }
 .sd-field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; }
 .sd-field--full { grid-column: 1 / -1; }

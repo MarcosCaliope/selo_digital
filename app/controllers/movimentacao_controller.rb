@@ -33,26 +33,16 @@ class MovimentacaoController < ApplicationController
     redirect_to movimentacao_path, alert: "Erro ao enviar atos: #{e.message}"
   end
 
+  # Formulário único de retificação: campos do CGenerica (valores, datas) e
+  # de <partePessoa> (nome, documento, endereço) juntos — ver
+  # AtoPraticado#parte_pessoa_dados pra prioridade entre esse override manual,
+  # dados reais automáticos por stiposelagem e o placeholder genérico. Quando
+  # ainda não há RetificacaoParte salva, pré-preenche com o que sairia
+  # automaticamente (se houver) como ponto de partida, sem persistir nada até
+  # o usuário salvar. Reaproveitado também pra reeditar um ato que já está
+  # pendente de retificação (ver link "Editar retificação" no painel de
+  # pendentes) — AtoPraticado.find não filtra por status.
   def editar_retificacao
-    @ato = AtoPraticado.find(params[:id])
-  end
-
-  def retificar
-    ato = AtoPraticado.find(params[:id])
-    ato.marcar_para_retificacao!(retificacao_params)
-    redirect_to editar_retificacao_parte_movimentacao_path(ato),
-      notice: "Ato #{ato.id} marcado para retificação. Revise nome/documento/endereço da parte, se necessário, antes de reenviar."
-  rescue ActiveRecord::RecordInvalid, StandardError => e
-    redirect_to movimentacao_path, alert: "Erro ao marcar retificação: #{e.message}"
-  end
-
-  # Segunda etapa da retificação: dados de <partePessoa> (nome, documento,
-  # endereço) que por padrão vêm de dados legados reais ou de um placeholder
-  # genérico (ver AtoPraticado#parte_pessoa_dados) — aqui o usuário pode
-  # sobrepor manualmente pra este ato específico. Pré-preenche com o que sairia
-  # automaticamente (se houver) como ponto de partida, sem persistir nada até o
-  # usuário salvar.
-  def editar_retificacao_parte
     @ato = AtoPraticado.find(params[:id])
     @parte = @ato.retificacao_parte || @ato.build_retificacao_parte
     if @parte.new_record? && (automatico = @ato.parte_pessoa_dados)
@@ -64,13 +54,16 @@ class MovimentacaoController < ApplicationController
     end
   end
 
-  def retificar_parte
+  def retificar
     ato = AtoPraticado.find(params[:id])
     parte = ato.retificacao_parte || ato.build_retificacao_parte
-    parte.update!(retificacao_parte_params)
-    redirect_to movimentacao_path, notice: "Dados da parte do ato #{ato.id} atualizados para a retificação."
+    ActiveRecord::Base.transaction do
+      ato.marcar_para_retificacao!(retificacao_params)
+      parte.update!(retificacao_parte_params)
+    end
+    redirect_to movimentacao_path, notice: "Ato #{ato.id} marcado para retificação — revise e envie na fila de atos pendentes."
   rescue ActiveRecord::RecordInvalid, StandardError => e
-    redirect_to movimentacao_path, alert: "Erro ao salvar dados da parte: #{e.message}"
+    redirect_to movimentacao_path, alert: "Erro ao marcar retificação: #{e.message}"
   end
 
   private
