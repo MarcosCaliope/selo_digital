@@ -24,7 +24,7 @@
     </div>
   <% end %>
 
-  <%= form_with url: retificar_movimentacao_path(@ato), method: :patch, local: true, html: { class: "sd-form" } do %>
+  <%= form_with url: retificar_movimentacao_path(@ato), method: :patch, html: { class: "sd-form" } do %>
     <h2 class="sd-form-section">Dados do ato</h2>
     <%= fields_for :ato_praticado, @ato do |f| %>
       <div class="sd-form-grid">
