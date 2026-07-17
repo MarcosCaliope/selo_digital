@@ -4,8 +4,10 @@ class Solicitacao < ApplicationRecord
   scope :pendentes, -> { where(recebido: false).order(:id) }
 
   # Usa a chave desta solicitação para baixar do TJCE os números de série dos
-  # selos, grava-os em sd_selos (status 'D' = disponível) e marca como recebida.
-  # Retorna a quantidade de selos efetivamente gravados.
+  # selos, grava-os em sd_selos (status 'D' = disponível, data = hoje — mesmo
+  # padrão das linhas legadas, que sempre preenchem data com a data do
+  # recebimento) e marca como recebida. Retorna a quantidade de selos
+  # efetivamente gravados.
   def receber!(empresa)
     resposta = empresa.selo_digital_client.receber_selos(chave: chave)
 
@@ -23,7 +25,8 @@ class Solicitacao < ApplicationRecord
           id_sol: id,
           status: "D",
           validador: s[:validador],
-          tipo_selo: s[:codigo_selo]
+          tipo_selo: s[:codigo_selo],
+          data: Date.current
         )
         gravados += 1
       end
