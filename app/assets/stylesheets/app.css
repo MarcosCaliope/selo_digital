@@ -151,14 +151,15 @@ body {
 .sd-field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; }
 .sd-field--full { grid-column: 1 / -1; }
 .sd-field label { font-size: 0.8rem; font-weight: 600; color: #374151; }
-.sd-field input {
+.sd-field input, .sd-field select {
   border: 1px solid #d1d5db;
   border-radius: 6px;
   padding: 0.5rem 0.7rem;
   font-size: 0.9rem;
   font-family: inherit;
+  background: #fff;
 }
-.sd-field input:focus { outline: none; border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,.15); }
+.sd-field input:focus, .sd-field select:focus { outline: none; border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,.15); }
 .sd-field input[type="checkbox"] { border: none; padding: 0; width: auto; margin-right: 0.4rem; }
 .sd-field label:has(input[type="checkbox"]) { display: flex; align-items: center; font-weight: 500; }
 .sd-field-hint { font-size: 0.78rem; color: #6b7280; }

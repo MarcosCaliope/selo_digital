@@ -1,6 +1,12 @@
 class AtoPraticado < ApplicationRecord
   self.table_name = "sd_atosPraticados"
 
+  # Dados de partePessoa editados manualmente pra retificação (nome,
+  # documento, endereço) — ver RetificacaoParte e #parte_pessoa_dados abaixo.
+  # Tabela própria deste app, não faz parte do schema legado de
+  # sd_atosPraticados.
+  has_one :retificacao_parte, inverse_of: :ato_praticado
+
   # tipoDocumento numérico que o TJCE espera em <partePessoa><pessoa><documento>.
   TIPO_DOCUMENTO_CNPJ = 1
   TIPO_DOCUMENTO_CPF = 2
@@ -63,13 +69,17 @@ class AtoPraticado < ApplicationRecord
     save!
   end
 
-  # nomePessoa/documento reais para <partePessoa> (ver client.rb#ato_xml), quando
-  # stiposelagem indica que este ato não é um ato de cartório comum e por isso
-  # tem uma parte real identificável fora de sd_atosPraticados — hoje "D"
-  # (título de protesto), "C" (certidão), "E" (escritura) e "T" (testamento).
-  # Nos demais casos (stiposelagem em branco, ou qualquer valor sem tratamento
-  # aqui) retorna nil e client.rb usa o placeholder genérico de sempre.
+  # nomePessoa/documento/endereço para <partePessoa> (ver client.rb#ato_xml).
+  # Prioridade: 1) retificacao_parte preenchida manualmente pelo usuário na
+  # tela de retificação (sobrepõe tudo, é intencional); 2) dados reais
+  # automáticos quando stiposelagem indica que este ato não é um ato de
+  # cartório comum e tem uma parte real identificável fora de
+  # sd_atosPraticados — hoje "D" (título de protesto), "C" (certidão), "E"
+  # (escritura) e "T" (testamento); 3) nil, e client.rb usa o placeholder
+  # genérico de sempre (stiposelagem em branco ou sem tratamento aqui).
   def parte_pessoa_dados
+    return retificacao_parte.parte_pessoa_dados if retificacao_parte&.preenchida?
+
     case stiposelagem
     when "D" then parte_pessoa_titulo
     when "C" then parte_pessoa_certidao

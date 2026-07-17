@@ -222,20 +222,31 @@ module SeloDigital
     # no XSD (docs/tjce/) é logo após codigoAto, então foi inserido ali; ver
     # AtoPraticado#retificacao? para de onde vem o valor.
     #
-    # nomePessoa/documento em <partePessoa> usam os dados reais da parte
-    # (AtoPraticado#parte_pessoa_dados) quando disponíveis; caem no mesmo
-    # placeholder genérico de sempre quando não (ver nota da classe acima).
+    # nomePessoa/documento/endereço em <partePessoa> usam os dados reais ou
+    # editados manualmente da parte (AtoPraticado#parte_pessoa_dados) quando
+    # disponíveis; caem no mesmo placeholder genérico de sempre campo a campo
+    # quando não (ver nota da classe acima e RetificacaoParte). CGI.escapeHTML
+    # em todo campo de texto livre — nome vem do legado (nome de empresa/
+    # pessoa, ex.: "R & A COMERCIAL LTDA", existe aos milhares em cbl_dev) e os
+    # demais agora podem vir de edição manual do usuário — sem isso um valor
+    # com "&"/"<" quebraria o XML.
     def ato_xml(ato)
       sq_ato_retificado = ato.retificacao? ? "<sqAtoRetificado>#{ato.sqAto_idOriginal}</sqAtoRetificado>\n  " : ""
-      parte_pessoa_dados = ato.parte_pessoa_dados
-      # CGI.escapeHTML aqui porque nome vem de texto livre do legado (nome de
-      # empresa/pessoa) — diferente dos demais campos interpolados neste método,
-      # que são todos numéricos/códigos e não podem conter "&", "<", etc. Sem
-      # isso um nome como "R & A COMERCIAL LTDA" (existe aos milhares em
-      # cbl_dev) quebraria o XML.
-      nome_pessoa = parte_pessoa_dados ? CGI.escapeHTML(parte_pessoa_dados[:nome].to_s) : "Generico"
-      tipo_documento = parte_pessoa_dados ? parte_pessoa_dados[:tipo_documento] : 1
-      numero_documento = parte_pessoa_dados ? parte_pessoa_dados[:numero_documento] : "0123456789"
+      parte = ato.parte_pessoa_dados || {}
+      nome_pessoa = CGI.escapeHTML(parte[:nome].presence || "Generico")
+      tipo_documento = parte[:tipo_documento].presence || 1
+      numero_documento = CGI.escapeHTML(parte[:numero_documento].to_s.presence || "0123456789")
+      descricao_logradouro = CGI.escapeHTML(parte[:descricao_logradouro].presence || "rua")
+      numero_endereco = CGI.escapeHTML(parte[:numero_endereco].to_s.presence || "10")
+      bairro = CGI.escapeHTML(parte[:bairro].presence || "Todos")
+      complemento_xml = parte[:complemento].presence ? "<complemento>#{CGI.escapeHTML(parte[:complemento])}</complemento>\n                " : ""
+      cidade = parte[:cidade].presence || 2304400
+      uf = CGI.escapeHTML(parte[:uf].presence || "23")
+      cep = CGI.escapeHTML(parte[:cep].presence || "61522080")
+      descricao_documento = CGI.escapeHTML(parte[:descricao_documento].presence || "Doc Teste")
+      orgao_emissor = CGI.escapeHTML(parte[:orgao_emissor].presence || "SSP")
+      data_emissao_documento = parte[:data_emissao_documento].presence
+      data_emissao_documento = data_emissao_documento.respond_to?(:strftime) ? data_emissao_documento.strftime("%Y-%m-%d") : (data_emissao_documento || "2017-01-01T10:00:00")
       <<~XML
         <atos xsi:type="ns3:CGenerica">
           <valorEmolumento>#{ato.valorEmolumento}</valorEmolumento>
@@ -267,19 +278,19 @@ module SeloDigital
               <nomePessoa>#{nome_pessoa}</nomePessoa>
               <endereco>
                 <tipoEndereco>1</tipoEndereco>
-                <descricaoLogradouro>rua</descricaoLogradouro>
-                <numero>10</numero>
-                <bairro>Todos</bairro>
-                <cidade>2304400</cidade>
-                <uf>23</uf>
-                <cep>61522080</cep>
+                <descricaoLogradouro>#{descricao_logradouro}</descricaoLogradouro>
+                <numero>#{numero_endereco}</numero>
+                <bairro>#{bairro}</bairro>
+                #{complemento_xml}<cidade>#{cidade}</cidade>
+                <uf>#{uf}</uf>
+                <cep>#{cep}</cep>
               </endereco>
               <documento>
                 <tipoDocumento>#{tipo_documento}</tipoDocumento>
                 <numero>#{numero_documento}</numero>
-                <descricao>Doc Teste</descricao>
-                <orgaoEmissor>SSP</orgaoEmissor>
-                <dataEmissao>2017-01-01T10:00:00</dataEmissao>
+                <descricao>#{descricao_documento}</descricao>
+                <orgaoEmissor>#{orgao_emissor}</orgaoEmissor>
+                <dataEmissao>#{data_emissao_documento}</dataEmissao>
               </documento>
             </pessoa>
           </partePessoa>

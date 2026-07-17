@@ -1,0 +1,101 @@
+<% content_for :title, "Dados da parte — retificação do ato #{@ato.id} — Selo Digital" %>
+
+<div class="sd-container">
+  <div class="sd-header">
+    <div>
+      <h1>Dados da parte — ato <%= @ato.id %></h1>
+      <p class="sd-subtitle">
+        Etapa 2 de 2 da retificação. Nome, documento e endereço enviados em &lt;partePessoa&gt; —
+        deixe em branco pra manter o dado automático (real, quando disponível para este tipo de ato) ou o
+        placeholder genérico que a produção já usa hoje.
+      </p>
+    </div>
+    <%= link_to "Pular / voltar ao painel", movimentacao_path, class: "sd-btn sd-btn--secondary" %>
+  </div>
+
+  <% if @parte.errors.any? %>
+    <div class="sd-errors">
+      <strong><%= pluralize(@parte.errors.count, "erro") %> impediram o salvamento:</strong>
+      <ul>
+        <% @parte.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form_with model: @parte, url: retificar_parte_movimentacao_path(@ato), method: :patch, local: true, html: { class: "sd-form" } do |f| %>
+    <div class="sd-form-grid">
+      <div class="sd-field sd-field--full">
+        <%= f.label :nome_pessoa, "Nome" %>
+        <%= f.text_field :nome_pessoa %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :tipo_documento, "Tipo de documento" %>
+        <%= f.select :tipo_documento,
+            [ [ "CPF", AtoPraticado::TIPO_DOCUMENTO_CPF ], [ "CNPJ", AtoPraticado::TIPO_DOCUMENTO_CNPJ ] ],
+            include_blank: true %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :numero_documento, "Número do documento" %>
+        <%= f.text_field :numero_documento %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :descricao_documento, "Descrição do documento" %>
+        <%= f.text_field :descricao_documento %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :orgao_emissor, "Órgão emissor" %>
+        <%= f.text_field :orgao_emissor %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :data_emissao_documento, "Data de emissão" %>
+        <%= f.date_field :data_emissao_documento %>
+      </div>
+
+      <div class="sd-field sd-field--full">
+        <%= f.label :descricao_logradouro, "Logradouro" %>
+        <%= f.text_field :descricao_logradouro %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :numero_endereco, "Número" %>
+        <%= f.text_field :numero_endereco %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :complemento, "Complemento" %>
+        <%= f.text_field :complemento %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :bairro, "Bairro" %>
+        <%= f.text_field :bairro %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :cidade, "Cidade (código IBGE)" %>
+        <%= f.text_field :cidade %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :uf, "UF (código IBGE)" %>
+        <%= f.text_field :uf %>
+      </div>
+
+      <div class="sd-field">
+        <%= f.label :cep, "CEP" %>
+        <%= f.text_field :cep %>
+      </div>
+    </div>
+
+    <div style="padding: 0.75rem 1rem;">
+      <%= f.submit "Salvar dados da parte", class: "sd-btn" %>
+    </div>
+  <% end %>
+</div>

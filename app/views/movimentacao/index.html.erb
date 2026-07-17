@@ -33,6 +33,7 @@
                   <th>Cód. ato</th>
                   <th>Tipo selo</th>
                   <th>Protocolo</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -50,6 +51,11 @@
                       <% end %>
                     </td>
                     <td><%= ato.id_ato.to_i %></td>
+                    <td>
+                      <% if ato.retificacao? %>
+                        <%= link_to "Editar parte", editar_retificacao_parte_movimentacao_path(ato), class: "sd-btn sd-btn--secondary" %>
+                      <% end %>
+                    </td>
                   </tr>
                 <% end %>
               </tbody>
