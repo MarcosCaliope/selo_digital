@@ -22,7 +22,10 @@ class Lote < ApplicationRecord
   # os atos que de fato vieram na resposta do TJCE; os demais (se a resposta
   # vier incompleta) também continuam pendentes. Atos rejeitados pelo TJ
   # (statusFalha na resposta) recebem status "F" e não entram na contagem de
-  # confirmados; sqAto_tj só é gravado para atos aceitos.
+  # confirmados; sqAto_tj só é gravado para atos aceitos. O motivo da rejeição
+  # é gravado em AtoFalha (tabela própria deste app, ver AtoPraticado.rejeitados)
+  # — sem isso o único registro era Rails.logger.warn, invisível no dashboard.
+  # Sucesso limpa qualquer AtoFalha anterior do mesmo ato (rejeição resolvida).
   def self.enviar_atos!(empresa, atos)
     return if atos.empty?
 
@@ -43,6 +46,14 @@ class Lote < ApplicationRecord
 
       if item[:falha]
         Rails.logger.warn("[SeloDigital] movimentarAtos falhou para ato #{ato.id}: status=#{item[:status_ato_tj]} codigo=#{item[:codigo_falha]}")
+        AtoFalha.find_or_initialize_by(ato_praticado_id: ato.id).update!(
+          codigo: item[:codigo_falha],
+          mensagem: item[:mensagem_falha],
+          status_ato_tj: item[:status_ato_tj],
+          ocorrida_em: Time.current
+        )
+      else
+        AtoFalha.where(ato_praticado_id: ato.id).delete_all
       end
 
       ato.update!(

@@ -2,6 +2,7 @@ class MovimentacaoController < ApplicationController
   def index
     @atos_pendentes = AtoPraticado.pendentes_de_envio.to_a
     @atos_enviados = AtoPraticado.enviados.to_a
+    @atos_rejeitados = AtoPraticado.rejeitados.includes(:ato_falha).to_a
     @lotes = Lote.emitidos_hoje.to_a
     @tipos_selo = TipoSelo.com_estoque_local
     @solicitacoes = Solicitacao.pendentes.to_a
@@ -64,6 +65,17 @@ class MovimentacaoController < ApplicationController
     redirect_to movimentacao_path, notice: "Ato #{ato.id} marcado para retificação — revise e envie na fila de atos pendentes."
   rescue ActiveRecord::RecordInvalid, StandardError => e
     redirect_to movimentacao_path, alert: "Erro ao marcar retificação: #{e.message}"
+  end
+
+  # Devolve um ato rejeitado (ver AtoPraticado.rejeitados) pra fila normal de
+  # envio, pra reenviar via "Enviar selecionados ao TJCE" como qualquer outro
+  # ato pendente.
+  def reenviar_rejeitado
+    ato = AtoPraticado.find(params[:id])
+    ato.reenviar!
+    redirect_to movimentacao_path, notice: "Ato #{ato.id} devolvido à fila de envio."
+  rescue ActiveRecord::RecordInvalid, StandardError => e
+    redirect_to movimentacao_path, alert: "Erro ao devolver ato à fila: #{e.message}"
   end
 
   private

@@ -150,8 +150,10 @@ module SeloDigital
     # já responde a tudo isso — os nomes camelCase vêm das colunas reais de
     # sd_atosPraticados).
     #
-    # Retorna um array de { id_ato:, falha:, sq_ato_tj:, status_ato_tj:, codigo_falha: }
-    # na ordem de resposta do TJCE — id_ato corresponde ao `id` passado em cada ato.
+    # Retorna um array de { id_ato:, falha:, sq_ato_tj:, status_ato_tj:, codigo_falha:,
+    # mensagem_falha: } na ordem de resposta do TJCE — id_ato corresponde ao `id`
+    # passado em cada ato; codigo_falha/mensagem_falha só vêm preenchidos quando falha
+    # é true.
     #
     # NOTA: o bloco <partePessoa> replica o placeholder genérico ("Generico"/dados
     # fictícios) que o PHP legado já envia em produção — não temos confirmação de que
@@ -478,11 +480,12 @@ module SeloDigital
         falha = item.at_xpath("statusFalha")
         if falha
           itens << {
-            id_ato:        id_ato,
-            falha:         true,
-            sq_ato_tj:     nil,
-            status_ato_tj: falha.at_xpath("status")&.text,
-            codigo_falha:  falha.at_xpath("codigo")&.text
+            id_ato:         id_ato,
+            falha:          true,
+            sq_ato_tj:      nil,
+            status_ato_tj:  falha.at_xpath("status")&.text,
+            codigo_falha:   falha.at_xpath("codigo")&.text,
+            mensagem_falha: falha.at_xpath("mensagem")&.text
           }
         else
           itens << {

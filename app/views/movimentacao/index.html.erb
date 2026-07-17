@@ -136,6 +136,44 @@
           <p class="sd-panel-empty">Nenhum ato enviado.</p>
         <% end %>
       </div>
+
+      <div class="sd-panel">
+        <div class="sd-panel-header">
+          <span>Atos rejeitados pelo TJCE</span>
+          <span class="sd-field-hint"><%= @atos_rejeitados.size %></span>
+        </div>
+        <% if @atos_rejeitados.any? %>
+          <table class="sd-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Selo</th>
+                <th>Motivo</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @atos_rejeitados.each do |ato| %>
+                <tr>
+                  <td><%= ato.id %></td>
+                  <td><%= ato.selo %></td>
+                  <td>
+                    <span class="sd-badge" title="<%= ato.ato_falha&.mensagem %>"><%= ato.ato_falha&.codigo %></span>
+                    <%= ato.ato_falha&.mensagem %>
+                  </td>
+                  <td>
+                    <%= button_to "Reenviar", reenviar_rejeitado_movimentacao_path(ato),
+                        class: "sd-btn sd-btn--secondary",
+                        form: { data: { turbo_confirm: "Devolver o ato #{ato.id} pra fila de envio? Ele volta pra 'Atos aguardando envio' pra ser reenviado." } } %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="sd-panel-empty">Nenhum ato rejeitado.</p>
+        <% end %>
+      </div>
     </div>
 
     <div>

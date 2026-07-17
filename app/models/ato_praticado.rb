@@ -7,6 +7,10 @@ class AtoPraticado < ApplicationRecord
   # sd_atosPraticados.
   has_one :retificacao_parte, inverse_of: :ato_praticado
 
+  # Última rejeição do TJCE em movimentar_atos, se houver — ver AtoFalha e
+  # #rejeitados abaixo. Também tabela própria deste app.
+  has_one :ato_falha, inverse_of: :ato_praticado
+
   # tipoDocumento numérico que o TJCE espera em <partePessoa><pessoa><documento>.
   TIPO_DOCUMENTO_CNPJ = 1
   TIPO_DOCUMENTO_CPF = 2
@@ -40,6 +44,19 @@ class AtoPraticado < ApplicationRecord
       .limit(50)
   }
 
+  # Atos rejeitados pelo TJCE em movimentar_atos (status "F", ver
+  # Lote.enviar_atos!) — o join com ato_falhas garante que só aparecem aqui
+  # atos rejeitados por *este app* (a tabela só é escrita ali), não qualquer
+  # uso histórico de "F" que porventura exista no legado. Saem desta lista
+  # assim que reenviados (status volta a "N" em #reenviar!, ver abaixo) —
+  # nada aqui apaga o histórico em ato_falhas, só o registro mais recente é
+  # exibido.
+  scope :rejeitados, -> {
+    joins(:ato_falha).where(status: "F")
+      .order(Arel.sql("ato_falhas.ocorrida_em DESC"))
+      .limit(50)
+  }
+
   def selo
     "#{numero_selo&.strip}-#{validador&.strip}"
   end
@@ -67,6 +84,16 @@ class AtoPraticado < ApplicationRecord
     self.status = "N"
     self.lote = 0
     save!
+  end
+
+  # Devolve um ato rejeitado (status "F", ver .rejeitados) pra fila normal de
+  # envio, sem tocar em mais nada — se era uma retificação, continua sendo
+  # (retificacao/sqAto_idOriginal preservados), então o próximo envio ainda
+  # referencia o sqAto certo em <sqAtoRetificado>. O histórico em ato_falha
+  # não é apagado aqui; Lote.enviar_atos! atualiza (nova rejeição) ou remove
+  # (sucesso) no próximo envio.
+  def reenviar!
+    update!(status: "N", lote: 0)
   end
 
   # nomePessoa/documento/endereço para <partePessoa> (ver client.rb#ato_xml).
