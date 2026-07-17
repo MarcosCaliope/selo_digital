@@ -214,11 +214,21 @@
                 <td class="sd-num <%= "sd-text-danger" if tipo.abaixo_do_minimo? %>"><%= tipo.estoque_atual %></td>
                 <td class="sd-num"><%= tipo.estoque_min %></td>
                 <td>
-                  <% if tipo.qte_pedido.to_i > 0 && tipo.abaixo_do_minimo? %>
-                    <%= button_to "Solicitar #{tipo.qte_pedido}", solicitar_selos_movimentacao_path(codigo_tipo: tipo.codigo_tipo),
-                        class: "sd-btn sd-btn--secondary",
-                        form: { data: { turbo_confirm: "Solicitar #{tipo.qte_pedido} selo(s) do Tipo #{tipo.codigo_tipo} ao TJCE?" } } %>
-                  <% end %>
+                  <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem;">
+                    <% if tipo.qte_pedido.to_i > 0 && tipo.abaixo_do_minimo? %>
+                      <%= button_to "Solicitar #{tipo.qte_pedido}", solicitar_selos_movimentacao_path(codigo_tipo: tipo.codigo_tipo),
+                          class: "sd-btn sd-btn--secondary",
+                          form: { data: { turbo_confirm: "Solicitar #{tipo.qte_pedido} selo(s) do Tipo #{tipo.codigo_tipo} ao TJCE?" } } %>
+                    <% end %>
+                    <%= form_with url: solicitar_selos_movimentacao_path, method: :post,
+                        html: { style: "display: inline-flex; gap: 0.3rem;",
+                                data: { turbo_confirm: "Solicitar a quantidade informada do Tipo #{tipo.codigo_tipo} ao TJCE?" } } do %>
+                      <%= hidden_field_tag :codigo_tipo, tipo.codigo_tipo %>
+                      <input type="number" name="quantidade" min="1" step="1" required placeholder="Qtde"
+                          style="width: 4.5rem; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.3rem 0.4rem; font-size: 0.8rem;">
+                      <%= submit_tag "Solicitar", class: "sd-btn sd-btn--secondary" %>
+                    <% end %>
+                  </div>
                 </td>
               </tr>
             <% end %>

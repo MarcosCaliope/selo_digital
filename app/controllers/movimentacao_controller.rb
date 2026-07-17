@@ -9,10 +9,14 @@ class MovimentacaoController < ApplicationController
     @solicitacoes = Solicitacao.pendentes.to_a
   end
 
+  # Sem quantidade: pedido automático de qte_pedido (só permitido abaixo do
+  # estoque mínimo, ver TipoSelo#solicitar!). Com quantidade: pedido manual
+  # escolhido pelo operador (TipoSelo#solicitar_quantidade!, sem esse guard) —
+  # ver formulário "Solicitar quantidade" no painel de estoque.
   def solicitar_selos
     tipo = TipoSelo.find_by!(codigo_tipo: params[:codigo_tipo])
-    tipo.solicitar!(empresa!)
-    redirect_to movimentacao_path, notice: "Solicitação de #{tipo.qte_pedido} selo(s) do Tipo #{tipo.codigo_tipo} enviada ao TJCE."
+    solicitacao = params[:quantidade].present? ? tipo.solicitar_quantidade!(empresa!, params[:quantidade]) : tipo.solicitar!(empresa!)
+    redirect_to movimentacao_path, notice: "Solicitação de #{solicitacao.quantidade} selo(s) do Tipo #{tipo.codigo_tipo} enviada ao TJCE."
   rescue SeloDigital::Error, StandardError => e
     redirect_to movimentacao_path, alert: "Erro ao solicitar selos: #{e.message}"
   end

@@ -32,24 +32,36 @@ class TipoSelo < ApplicationRecord
   end
 
   # Solicita ao TJCE a quantidade configurada (qte_pedido) deste tipo de selo.
-  # Grava a solicitação localmente com a chave retornada; receber_selos! (em
-  # Solicitacao) é o próximo passo para efetivamente baixar os números de série.
   #
   # Só permite solicitar quando o estoque local está abaixo do mínimo configurado
-  # — não é pra pedir selo "à toa", só quando realmente falta.
-  #
-  # A Solicitacao é criada (sem chave) antes de chamar o TJCE para que o id
-  # enviado como idSolicitacaoSelo seja o id real atribuído pelo Postgres —
-  # calcular via Solicitacao.maximum(:id) + 1 diverge sempre que a sequence tiver
-  # algum gap (rollback, insert falho, linha deletada), o que é comum em produção.
+  # — não é pra pedir selo "à toa", só quando realmente falta. Ver
+  # #solicitar_quantidade! pro pedido manual, sem esse guard.
   def solicitar!(empresa)
     unless abaixo_do_minimo?
       raise SeloDigital::Error, "Estoque local do Tipo #{codigo_tipo} (#{estoque_local}) não está abaixo do mínimo (#{estoque_min})."
     end
 
+    solicitar_quantidade!(empresa, qte_pedido)
+  end
+
+  # Solicita ao TJCE uma quantidade escolhida manualmente pelo operador, sem o
+  # guard de estoque mínimo de #solicitar! — usado pelo formulário de
+  # solicitação manual no dashboard, pra quando o operador quer pedir selo por
+  # antecipação, não só quando o estoque já caiu abaixo do mínimo configurado.
+  # Grava a solicitação localmente com a chave retornada; receber_selos! (em
+  # Solicitacao) é o próximo passo para efetivamente baixar os números de série.
+  #
+  # A Solicitacao é criada (sem chave) antes de chamar o TJCE para que o id
+  # enviado como idSolicitacaoSelo seja o id real atribuído pelo Postgres —
+  # calcular via Solicitacao.maximum(:id) + 1 diverge sempre que a sequence tiver
+  # algum gap (rollback, insert falho, linha deletada), o que é comum em produção.
+  def solicitar_quantidade!(empresa, quantidade)
+    quantidade = quantidade.to_i
+    raise SeloDigital::Error, "Quantidade precisa ser maior que zero." unless quantidade.positive?
+
     solicitacao = Solicitacao.create!(
       data: Date.current,
-      quantidade: qte_pedido,
+      quantidade: quantidade,
       recebido: false,
       codigo_tipo: codigo_tipo,
       estado: 0
@@ -57,7 +69,7 @@ class TipoSelo < ApplicationRecord
 
     resposta = empresa.selo_digital_client.solicita_selos(
       codigo_tipo_selo: codigo_tipo,
-      quantidade: qte_pedido,
+      quantidade: quantidade,
       id_solicitacao: solicitacao.id
     )
 
