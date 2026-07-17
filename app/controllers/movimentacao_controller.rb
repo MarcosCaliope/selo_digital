@@ -1,7 +1,8 @@
 class MovimentacaoController < ApplicationController
   def index
     @atos_pendentes = AtoPraticado.pendentes_de_envio.to_a
-    @atos_enviados = AtoPraticado.enviados.to_a
+    @busca_enviados = params[:busca_enviados]
+    @atos_enviados = AtoPraticado.enviados(busca: @busca_enviados).to_a
     @atos_rejeitados = AtoPraticado.rejeitados.includes(:ato_falha).to_a
     @lotes = Lote.emitidos_hoje.to_a
     @tipos_selo = TipoSelo.com_estoque_local

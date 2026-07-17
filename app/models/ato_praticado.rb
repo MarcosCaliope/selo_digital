@@ -37,11 +37,19 @@ class AtoPraticado < ApplicationRecord
   # ordena NULL primeiro em DESC por padrão, o que colocaria essas linhas
   # históricas na frente das enviadas de verdade por este app. Uma vez
   # marcado, o ato volta a status "N" e some desta lista até ser reenviado
-  # (voltando pra "E"/"F").
-  scope :enviados, -> {
-    where(status: "E").where.not(sqAto_tj: [ nil, "" ])
-      .order(Arel.sql("data_retorno_tj DESC NULLS LAST"))
-      .limit(50)
+  # (voltando pra "E"/"F"). Painel mostra só os 10 mais recentes por padrão;
+  # `busca:` filtra pelo número do selo (ver #selo) antes de aplicar o limite,
+  # pra achar um enviado mais antigo sem precisar aumentar o limite. numero_selo
+  # e validador são colunas de largura fixa no legado (cheias de espaço à
+  # direita) — TRIM nos dois lados do ILIKE cobre buscar com ou sem o "-".
+  scope :enviados, ->(busca: nil) {
+    relation = where(status: "E").where.not(sqAto_tj: [ nil, "" ])
+    if busca.present?
+      relation = relation.where(
+        "TRIM(numero_selo) || '-' || TRIM(validador) ILIKE ?", "%#{busca.strip}%"
+      )
+    end
+    relation.order(Arel.sql("data_retorno_tj DESC NULLS LAST")).limit(10)
   }
 
   # Atos rejeitados pelo TJCE em movimentar_atos (status "F", ver

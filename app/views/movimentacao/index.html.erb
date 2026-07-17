@@ -107,6 +107,17 @@
           <span>Atos enviados (confirmados pelo TJCE)</span>
           <span class="sd-field-hint"><%= @atos_enviados.size %></span>
         </div>
+        <div style="padding: 0.75rem 1rem; border-bottom: 1px solid #f0f0f0; display: flex; gap: 0.5rem;">
+          <%= form_with url: movimentacao_path, method: :get, html: { style: "display: flex; gap: 0.5rem; flex: 1;" } do %>
+            <input type="text" name="busca_enviados" value="<%= @busca_enviados %>"
+                placeholder="Buscar pelo número do selo..."
+                style="flex: 1; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.4rem 0.7rem; font-size: 0.85rem;">
+            <%= submit_tag "Buscar", class: "sd-btn sd-btn--secondary" %>
+          <% end %>
+          <% if @busca_enviados.present? %>
+            <%= link_to "Limpar", movimentacao_path, class: "sd-btn sd-btn--secondary" %>
+          <% end %>
+        </div>
         <% if @atos_enviados.any? %>
           <table class="sd-table">
             <thead>
@@ -133,7 +144,13 @@
             </tbody>
           </table>
         <% else %>
-          <p class="sd-panel-empty">Nenhum ato enviado.</p>
+          <p class="sd-panel-empty">
+            <% if @busca_enviados.present? %>
+              Nenhum ato enviado encontrado para "<%= @busca_enviados %>".
+            <% else %>
+              Nenhum ato enviado.
+            <% end %>
+          </p>
         <% end %>
       </div>
 
