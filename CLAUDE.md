@@ -8,7 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The application integrates with the **TJCE (Tribunal de Justiça do Ceará) Selo Digital** SOAP web service using mutual TLS (mTLS) authentication via digital certificate (`.pfx`). It queries and manages digital seals issued by the court system.
 
-Root `/` and `/selos` both point to `SelosController#index`, which calls `SeloDigital::Client` and renders the result. `/empresas` is a standard RESTful CRUD (`resources :empresas`) for managing cartório records, including the digital certificate used for the TJCE connection. `/movimentacao` is a read-only dashboard (`MovimentacaoController#index`) over the legacy `sd_*` tables — see below.
+Root `/` and `/selos` both point to `SelosController#index`, which calls `SeloDigital::Client` and renders the result. `/empresas` is a standard RESTful CRUD (`resources :empresas`) for managing cartório records, including the digital certificate used for the TJCE connection. `/movimentacao` (`MovimentacaoController#index`) is a dashboard over the legacy `sd_*` tables with both read panels and write actions (send atos, request/receive selos, retificação) — see "Movimentação dashboard" below.
+
+For a non-technical walkthrough of every screen (what each panel does, step-by-step flows for sending atos, retificação, requesting/receiving selos, automatic sending), see `docs/manual/README.md`. `docs/tjce/README.md` has the technical WSDL/XSD reference used to reverse-engineer the SOAP integration — check there before re-deriving request/response shapes from error messages.
 
 ## Common Commands
 
@@ -46,7 +48,7 @@ CI runs all four of these: `brakeman`, `importmap audit`, `rubocop`, and `rails 
 
 **Deployment:** Kamal (`config/deploy.yml`) — builds a Docker image and deploys to configured servers. Secrets via `.kamal/secrets`, master key via `RAILS_MASTER_KEY`.
 
-**Recurring jobs:** Defined in `config/recurring.yml` (Solid Queue scheduler). Currently only one production job: clears finished Solid Queue jobs every hour.
+**Recurring jobs:** Defined in `config/recurring.yml` (Solid Queue scheduler), `production` only. Two jobs: clears finished Solid Queue jobs every hour, and `EnvioAutomaticoAtosJob` every minute (see "Automatic sending" in the Movimentação section below — the job itself decides whether to act on each wake-up).
 
 ## Database
 
