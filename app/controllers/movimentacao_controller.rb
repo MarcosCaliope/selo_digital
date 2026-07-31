@@ -7,7 +7,7 @@ class MovimentacaoController < ApplicationController
     @lotes = Lote.emitidos_hoje.to_a
     @tipos_selo = TipoSelo.com_estoque_local
     @solicitacoes = Solicitacao.pendentes.to_a
-    @empresa = Empresa.first
+    @empresa = Empresa.para_esta_instancia
   end
 
   # Sem quantidade: pedido automático de qte_pedido (só permitido abaixo do
@@ -103,6 +103,6 @@ class MovimentacaoController < ApplicationController
   end
 
   def empresa!
-    Empresa.first || raise(SeloDigital::Error, "Nenhuma empresa cadastrada.")
+    Empresa.para_esta_instancia || raise(SeloDigital::Error, "Nenhuma empresa cadastrada para o modo de execução '#{Empresa.modo_execucao_desta_instancia}' desta instância.")
   end
 end

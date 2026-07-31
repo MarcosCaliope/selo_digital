@@ -1,7 +1,7 @@
 class SelosController < ApplicationController
   def index
-    empresa = Empresa.first
-    raise SeloDigital::Error, "Nenhuma empresa cadastrada." if empresa.nil?
+    empresa = Empresa.para_esta_instancia
+    raise SeloDigital::Error, "Nenhuma empresa cadastrada para o modo de execução '#{Empresa.modo_execucao_desta_instancia}' desta instância." if empresa.nil?
 
     @homologacao = empresa.homologacao
 

@@ -21,6 +21,7 @@
           <th>CNPJ</th>
           <th>Certificado</th>
           <th>Ambiente</th>
+          <th>Instância</th>
           <th>Envio automático</th>
           <th></th>
         </tr>
@@ -42,6 +43,13 @@
                 <span class="sd-badge" style="background:#fffbeb;color:#92400e;border-color:#fcd34d;">Homologação</span>
               <% else %>
                 <span class="sd-field-hint">Produção</span>
+              <% end %>
+            </td>
+            <td>
+              <% if empresa.modo_execucao == "local" %>
+                <span class="sd-badge" style="background:#eff6ff;color:#1e40af;border-color:#93c5fd;">Local</span>
+              <% else %>
+                <span class="sd-field-hint">Web</span>
               <% end %>
             </td>
             <td>

@@ -92,6 +92,12 @@
       <%= f.number_field :intervalo_envio_minutos, min: 0, step: 1 %>
       <span class="sd-field-hint">0 = envio manual (padrão). Maior que 0 = envia a fila de atos pendentes ao TJCE automaticamente a cada esse número de minutos.</span>
     </div>
+
+    <div class="sd-field">
+      <%= f.label :modo_execucao, "Modo de execução" %>
+      <%= f.select :modo_execucao, [["Web (Render)", "web"], ["Local (rede do cartório)", "local"]] %>
+      <span class="sd-field-hint">Qual instância desta aplicação processa esta empresa: a do Render (variável de ambiente APP_MODO_EXECUCAO=web, padrão) ou uma rodando localmente na rede do cartório (APP_MODO_EXECUCAO=local). Cada instância só age sobre as empresas cujo modo bate com o dela.</span>
+    </div>
   </div>
 
   <div class="sd-form-grid">

@@ -9,6 +9,19 @@ class Empresa < ApplicationRecord
   before_validation :ler_certificado_digital_upload
 
   validates :snomeempresa, presence: true
+  validates :modo_execucao, inclusion: { in: %w[web local] }
+
+  # Cada instância rodando (Render ou local, na rede de um cartório) só
+  # processa as empresas cujo modo_execucao bate com a variável de ambiente
+  # APP_MODO_EXECUCAO dessa instância — evita duas instâncias mexendo na
+  # mesma empresa ao mesmo tempo (mesmo banco siscartd compartilhado).
+  def self.modo_execucao_desta_instancia
+    ENV.fetch("APP_MODO_EXECUCAO", "web")
+  end
+
+  def self.para_esta_instancia
+    find_by(modo_execucao: modo_execucao_desta_instancia)
+  end
 
   # Monta o client SOAP configurado com o certificado, senha, código da serventia
   # e ambiente (homologação/produção) já cadastrados. O CPF/nome/telefone/e-mail do

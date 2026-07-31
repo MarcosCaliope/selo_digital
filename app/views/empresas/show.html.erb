@@ -34,6 +34,14 @@
         <% end %>
       </div>
       <div class="sd-field">
+        <label>Instância</label>
+        <% if @empresa.modo_execucao == "local" %>
+          <span class="sd-badge" style="background:#eff6ff;color:#1e40af;border-color:#93c5fd;">Local</span>
+        <% else %>
+          <span class="sd-badge">Web</span>
+        <% end %>
+      </div>
+      <div class="sd-field">
         <label>Envio automático de atos</label>
         <% if @empresa.envio_automatico? %>
           <span class="sd-badge">A cada <%= @empresa.intervalo_envio_minutos %> min</span>

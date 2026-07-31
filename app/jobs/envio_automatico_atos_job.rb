@@ -10,7 +10,7 @@ class EnvioAutomaticoAtosJob < ApplicationJob
   queue_as :default
 
   def perform
-    empresa = Empresa.first
+    empresa = Empresa.para_esta_instancia
     return unless empresa&.envio_automatico?
 
     intervalo = empresa.intervalo_envio_minutos.minutes
