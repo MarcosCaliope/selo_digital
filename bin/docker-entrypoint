@@ -6,6 +6,31 @@ if [ -z "${LD_PRELOAD+x}" ]; then
     export LD_PRELOAD
 fi
 
+# Reach a Postgres host that's only visible over Tailscale (e.g. Render -> a
+# database on a home/office network) by proxying a local TCP port through the
+# tailnet. Only runs when TS_AUTHKEY is set, so deployments that don't need it
+# (Kamal, local dev) are unaffected.
+if [ -n "${TS_AUTHKEY+x}" ]; then
+  if [ -z "${TS_DB_HOST+x}" ]; then
+    echo "docker-entrypoint: TS_AUTHKEY is set but TS_DB_HOST is not; refusing to start" >&2
+    exit 1
+  fi
+
+  tailscaled --state=mem: --socket=/tmp/tailscaled.sock --tun=userspace-networking \
+    --socks5-server=127.0.0.1:1055 &
+
+  for i in $(seq 1 30); do
+    tailscale --socket=/tmp/tailscaled.sock status >/dev/null 2>&1 && break
+    sleep 1
+  done
+
+  tailscale --socket=/tmp/tailscaled.sock up --authkey="${TS_AUTHKEY}" \
+    --hostname="${TS_HOSTNAME:-selo-digital-render}" --accept-routes
+
+  socat TCP-LISTEN:"${DB_PROXY_PORT:-5432}",bind=127.0.0.1,fork,reuseaddr \
+    SOCKS4A:127.0.0.1:"${TS_DB_HOST}":"${TS_DB_PORT:-5432}",socksport=1055 &
+fi
+
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
