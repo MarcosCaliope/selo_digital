@@ -1,0 +1,66 @@
+# Blueprint do Render (https://render.com/docs/blueprint-spec).
+# O Render só reconhece esse arquivo com o nome exato "render.yaml" na raiz do
+# repositório — diferente do Kamal, que usa config/deploy.yml.
+#
+# Build via Docker: usa o Dockerfile já existente na raiz, que faz todo o
+# bundle install/assets:precompile em multi-stage e já embute o binário do
+# Tailscale (ver bin/docker-entrypoint) para alcançar o Postgres legado
+# (siscartd) quando ele só está acessível pela rede da empresa/cartório, não
+# pela internet pública. Por isso não há build.sh aqui: no runtime docker o
+# Render não roda nenhum "build command" próprio, quem builda é o Dockerfile.
+#
+# Não há bloco `databases:` de propósito: o siscartd é um banco legado
+# compartilhado com o sistema Delphi (SIAC) e o app PHP legado, não algo que
+# deva ser criado/gerenciado pelo Render — ele continua rodando fora, e este
+# serviço só se conecta a ele (via Tailscale, ver TS_* abaixo).
+previewsEnabled: false # nunca subir uma instância de PR contra o banco de produção compartilhado
+
+services:
+  - type: web
+    name: selo-digital
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free # "free" hiberna por inatividade, o que quebraria o job de envio automático (roda a cada minuto) e o uso real do sistema
+    region: oregon # ajuste para a região mais próxima do cartório/usuários
+    branch: main
+    healthCheckPath: /up
+    numInstances: 1 # o app assume uma única instância ativa por modo de execução (ver Empresa.para_esta_instancia no CLAUDE.md) — não escalar horizontalmente
+    envVars:
+      # Porta: o Dockerfile expõe 80 (Thruster). O Render por padrão espera a
+      # porta 10000; setar PORT aqui faz o Render rotear para a porta certa.
+      - key: PORT
+        value: 80
+
+      - key: RAILS_MASTER_KEY
+        sync: false # copiar o conteúdo de config/master.key no dashboard do Render
+
+      # Necessário em produção: sem isso o Solid Queue (jobs + recurring.yml)
+      # não roda dentro do processo do Puma, e o EnvioAutomaticoAtosJob nunca dispara.
+      - key: SOLID_QUEUE_IN_PUMA
+        value: "true"
+
+      # Esta instância do Render atende as empresas em modo "web" (padrão).
+      # Ver "Single-tenant assumption" no CLAUDE.md.
+      - key: APP_MODO_EXECUCAO
+        value: web
+
+      # --- Conexão com o Postgres legado (siscartd) via Tailscale ---
+      # bin/docker-entrypoint só ativa o proxy Tailscale se TS_AUTHKEY estiver setado.
+      - key: TS_AUTHKEY
+        sync: false # gerar uma auth key (reusável ou efêmera) no admin do Tailscale
+      - key: TS_HOSTNAME
+        value: selo-digital-render
+      - key: TS_DB_HOST
+        sync: false # IP/hostname do Postgres dentro da tailnet (ex.: o mesmo 172.24.0.1 do host que já roda o Postgres hoje, ou o nó Tailscale correspondente)
+      - key: TS_DB_PORT
+        value: "5432"
+      - key: DB_PROXY_PORT
+        value: "5432"
+
+      # DB_HOST deve apontar para o proxy local (socat) que o entrypoint sobe
+      # em 127.0.0.1:DB_PROXY_PORT — não para o IP real do Postgres.
+      - key: DB_HOST
+        value: 127.0.0.1
+      - key: DB_PASSWORD
+        sync: false # senha real do Postgres de produção (não usar o fallback "Jesus7" do database.yml)
