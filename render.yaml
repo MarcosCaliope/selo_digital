@@ -35,11 +35,6 @@ services:
       - key: RAILS_MASTER_KEY
         sync: false # copiar o conteúdo de config/master.key no dashboard do Render
 
-      # Necessário em produção: sem isso o Solid Queue (jobs + recurring.yml)
-      # não roda dentro do processo do Puma, e o EnvioAutomaticoAtosJob nunca dispara.
-      - key: SOLID_QUEUE_IN_PUMA
-        value: "true"
-
       # Esta instância do Render atende as empresas em modo "web" (padrão).
       # Ver "Single-tenant assumption" no CLAUDE.md.
       - key: APP_MODO_EXECUCAO

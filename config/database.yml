@@ -81,22 +81,10 @@ test:
 # Read https://guides.rubyonrails.org/configuring.html#configuring-a-database
 # for a full overview on how database connection configuration can be specified.
 #
+# No cache/queue/cable roles: Solid Cache/Queue/Cable are all disabled in
+# production (see config/environments/production.rb) because siscartd's
+# PostgreSQL is too old for the upsert/SKIP LOCKED queries they depend on, so
+# there's no reason for db:prepare to create siscartd_cache/_queue/_cable.
 production:
-  primary: &primary_production
-    <<: *default
-
-  cache:
-    <<: *default
-    database: siscartd_cache
-    migrations_paths: db/cache_migrate
-
-  queue:
-    <<: *default
-    database: siscartd_queue
-    migrations_paths: db/queue_migrate
-
-  cable:
-    <<: *default
-    database: siscartd_cable
-    migrations_paths: db/cable_migrate
+  <<: *default
 

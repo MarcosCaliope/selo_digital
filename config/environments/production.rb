@@ -46,12 +46,15 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Replace the default in-process memory cache store with a durable alternative.
-  config.cache_store = :solid_cache_store
-
-  # Replace the default in-process and non-durable queuing backend for Active Job.
-  config.active_job.queue_adapter = :solid_queue
-  config.solid_queue.connects_to = { database: { writing: :queue } }
+  # Solid Cache and Solid Queue both need PG 9.5+ (ON CONFLICT / SKIP LOCKED),
+  # and siscartd runs an older PostgreSQL that isn't going to be upgraded, so
+  # neither is usable here. Nothing in the app calls Rails.cache directly, so
+  # the in-process memory store is a fine substitute for the (unused) cache;
+  # Active Job stays on Rails' default in-process :async adapter. See
+  # config/initializers/envio_automatico_scheduler.rb for the one recurring
+  # job that used to be scheduled through Solid Queue's config/recurring.yml.
+  config.cache_store = :memory_store
+  config.active_job.queue_adapter = :async
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.

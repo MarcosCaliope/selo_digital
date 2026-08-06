@@ -8,10 +8,9 @@ development:
 test:
   adapter: test
 
+# Solid Cable also depends on ON CONFLICT (upsert), unsupported by siscartd's
+# PostgreSQL version (see config/environments/production.rb). Action Cable
+# isn't actually used anywhere in this app, so the in-process async adapter
+# (same as development) is a safe stand-in rather than a real fix.
 production:
-  adapter: solid_cable
-  connects_to:
-    database:
-      writing: cable
-  polling_interval: 0.1.seconds
-  message_retention: 1.day
+  adapter: async

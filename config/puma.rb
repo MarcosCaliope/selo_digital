@@ -33,8 +33,10 @@ port ENV.fetch("PORT", 3000)
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
 
-# Run the Solid Queue supervisor inside of Puma for single-server deployments
-plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
+# Solid Queue is not used in production: siscartd runs on a PostgreSQL version
+# too old for the SKIP LOCKED / ON CONFLICT queries it depends on, and there's
+# no plan to upgrade it. See config/initializers/envio_automatico_scheduler.rb
+# for how the one recurring job (EnvioAutomaticoAtosJob) still runs without it.
 
 # Specify the PID file. Defaults to tmp/pids/server.pid in development.
 # In other environments, only set the PID file if requested.
