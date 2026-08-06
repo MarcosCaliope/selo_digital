@@ -29,6 +29,17 @@ if [ -n "${TS_AUTHKEY+x}" ]; then
 
   socat TCP-LISTEN:"${DB_PROXY_PORT:-5432}",bind=127.0.0.1,fork,reuseaddr \
     SOCKS4A:127.0.0.1:"${TS_DB_HOST}":"${TS_DB_PORT:-5432}",socksport=1055 &
+
+  # `tailscale up` returns as soon as this node is authenticated, but the
+  # actual path to a specific peer (DERP relay/NAT traversal) can take a few
+  # more seconds to come up. Racing straight into db:prepare below hits that
+  # window and fails with a confusing "server closed the connection
+  # unexpectedly" instead of a clear timeout, so wait for the proxy to
+  # actually reach Postgres first.
+  for i in $(seq 1 30); do
+    pg_isready -h 127.0.0.1 -p "${DB_PROXY_PORT:-5432}" >/dev/null 2>&1 && break
+    sleep 1
+  done
 fi
 
 # If running the rails server then create or migrate existing database
