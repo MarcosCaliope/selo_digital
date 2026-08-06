@@ -27,8 +27,9 @@ if [ -n "${TS_AUTHKEY+x}" ]; then
   tailscale --socket=/tmp/tailscaled.sock up --authkey="${TS_AUTHKEY}" \
     --hostname="${TS_HOSTNAME:-selo-digital-render}" --accept-routes
 
+  # Tailscale's --socks5-server above speaks SOCKS5, not SOCKS4A.
   socat TCP-LISTEN:"${DB_PROXY_PORT:-5432}",bind=127.0.0.1,fork,reuseaddr \
-    SOCKS4A:127.0.0.1:"${TS_DB_HOST}":"${TS_DB_PORT:-5432}",socksport=1055 &
+    SOCKS5-CONNECT:127.0.0.1:1055:"${TS_DB_HOST}":"${TS_DB_PORT:-5432}" &
 
   # `tailscale up` returns as soon as this node is authenticated, but the
   # actual path to a specific peer (DERP relay/NAT traversal) can take a few
