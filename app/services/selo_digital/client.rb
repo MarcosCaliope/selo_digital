@@ -245,31 +245,28 @@ module SeloDigital
     # no XSD (docs/tjce/) é logo após codigoAto, então foi inserido ali; ver
     # AtoPraticado#retificacao? para de onde vem o valor.
     #
-    # nomePessoa/documento/endereço em <partePessoa> usam os dados reais ou
-    # editados manualmente da parte (AtoPraticado#parte_pessoa_dados) quando
-    # disponíveis; caem no mesmo placeholder genérico de sempre campo a campo
-    # quando não (ver nota da classe acima e RetificacaoParte). CGI.escapeHTML
-    # em todo campo de texto livre — nome vem do legado (nome de empresa/
-    # pessoa, ex.: "R & A COMERCIAL LTDA", existe aos milhares em cbl_dev) e os
-    # demais agora podem vir de edição manual do usuário — sem isso um valor
-    # com "&"/"<" quebraria o XML.
+    # nomePessoa/documento/endereço em cada <partePessoa> usam os dados reais
+    # ou editados manualmente da parte (AtoPraticado#parte_pessoa_dados)
+    # quando disponíveis; caem no mesmo placeholder genérico de sempre campo a
+    # campo quando não (ver nota da classe acima e RetificacaoParte).
+    # parte_pessoa_dados devolve um array — um <partePessoa> por item; a
+    # maioria dos atos tem só um, mas uma escritura ("E") tem três (ver
+    # AtoPraticado#parte_pessoa_escritura). CGI.escapeHTML em todo campo de
+    # texto livre — nome vem do legado (nome de empresa/pessoa, ex.: "R & A
+    # COMERCIAL LTDA", existe aos milhares em cbl_dev) e os demais agora podem
+    # vir de edição manual do usuário — sem isso um valor com "&"/"<"
+    # quebraria o XML.
     def ato_xml(ato, id_ato_sintetico)
       sq_ato_retificado = ato.retificacao? ? "<sqAtoRetificado>#{ato.sqAto_idOriginal}</sqAtoRetificado>\n  " : ""
-      parte = ato.parte_pessoa_dados || {}
-      nome_pessoa = CGI.escapeHTML(parte[:nome].presence || "Generico")
-      tipo_documento = parte[:tipo_documento].presence || 1
-      numero_documento = CGI.escapeHTML(parte[:numero_documento].to_s.presence || "0123456789")
-      descricao_logradouro = CGI.escapeHTML(parte[:descricao_logradouro].presence || "rua")
-      numero_endereco = CGI.escapeHTML(parte[:numero_endereco].to_s.presence || "10")
-      bairro = CGI.escapeHTML(parte[:bairro].presence || "Todos")
-      complemento_xml = parte[:complemento].presence ? "<complemento>#{CGI.escapeHTML(parte[:complemento])}</complemento>\n                " : ""
-      cidade = parte[:cidade].presence || 2304400
-      uf = CGI.escapeHTML(parte[:uf].presence || "23")
-      cep = CGI.escapeHTML(parte[:cep].presence || "61522080")
-      descricao_documento = CGI.escapeHTML(parte[:descricao_documento].presence || "Doc Teste")
-      orgao_emissor = CGI.escapeHTML(parte[:orgao_emissor].presence || "SSP")
-      data_emissao_documento = parte[:data_emissao_documento].presence
-      data_emissao_documento = data_emissao_documento.respond_to?(:strftime) ? data_emissao_documento.strftime("%Y-%m-%d") : (data_emissao_documento || "2017-01-01T10:00:00")
+      # A indentação manual abaixo (tudo exceto a 1ª linha) alinha cada
+      # <partePessoa> com os outros filhos de <atos> — a interpolação no
+      # <<~XML logo abaixo só resolve a indentação da 1ª linha (a do texto-
+      # fonte, antes do valor interpolado existir); sem isso o XML de debug
+      # em log/soap/ ficaria com os blocos extras desalinhados.
+      partes_pessoa_xml = (ato.parte_pessoa_dados.presence || [ {} ]).each_with_index.map { |parte, indice|
+        parte_pessoa_xml(parte, ordem: indice + 1)
+      }.join
+      partes_pessoa_xml = partes_pessoa_xml.lines.map.with_index { |linha, i| i.zero? ? linha : "  #{linha}" }.join
       <<~XML
         <atos xsi:type="ns3:CGenerica">
           <valorEmolumento>#{ato.valorEmolumento}</valorEmolumento>
@@ -294,30 +291,50 @@ module SeloDigital
           <quantidadeExtra>#{ato.quantidadeExtra}</quantidadeExtra>
           <responsavel>#{@informante_cpf}</responsavel>
           <idAto>#{id_ato_sintetico}</idAto>
-          <partePessoa>
-            <ordem>1</ordem>
-            <tipoParte>1</tipoParte>
-            <pessoa>
-              <nomePessoa>#{nome_pessoa}</nomePessoa>
-              <endereco>
-                <tipoEndereco>1</tipoEndereco>
-                <descricaoLogradouro>#{descricao_logradouro}</descricaoLogradouro>
-                <numero>#{numero_endereco}</numero>
-                <bairro>#{bairro}</bairro>
-                #{complemento_xml}<cidade>#{cidade}</cidade>
-                <uf>#{uf}</uf>
-                <cep>#{cep}</cep>
-              </endereco>
-              <documento>
-                <tipoDocumento>#{tipo_documento}</tipoDocumento>
-                <numero>#{numero_documento}</numero>
-                <descricao>#{descricao_documento}</descricao>
-                <orgaoEmissor>#{orgao_emissor}</orgaoEmissor>
-                <dataEmissao>#{data_emissao_documento}</dataEmissao>
-              </documento>
-            </pessoa>
-          </partePessoa>
-        </atos>
+          #{partes_pessoa_xml}</atos>
+      XML
+    end
+
+    def parte_pessoa_xml(parte, ordem:)
+      tipo_parte = parte[:tipo_parte].presence || 1
+      nome_pessoa = CGI.escapeHTML(parte[:nome].presence || "Generico")
+      tipo_documento = parte[:tipo_documento].presence || 1
+      numero_documento = CGI.escapeHTML(parte[:numero_documento].to_s.presence || "0123456789")
+      descricao_logradouro = CGI.escapeHTML(parte[:descricao_logradouro].presence || "rua")
+      numero_endereco = CGI.escapeHTML(parte[:numero_endereco].to_s.presence || "10")
+      bairro = CGI.escapeHTML(parte[:bairro].presence || "Todos")
+      complemento_xml = parte[:complemento].presence ? "<complemento>#{CGI.escapeHTML(parte[:complemento])}</complemento>\n                " : ""
+      cidade = parte[:cidade].presence || 2304400
+      uf = CGI.escapeHTML(parte[:uf].presence || "23")
+      cep = CGI.escapeHTML(parte[:cep].presence || "61522080")
+      descricao_documento = CGI.escapeHTML(parte[:descricao_documento].presence || "Doc Teste")
+      orgao_emissor = CGI.escapeHTML(parte[:orgao_emissor].presence || "SSP")
+      data_emissao_documento = parte[:data_emissao_documento].presence
+      data_emissao_documento = data_emissao_documento.respond_to?(:strftime) ? data_emissao_documento.strftime("%Y-%m-%d") : (data_emissao_documento || "2017-01-01T10:00:00")
+      <<~XML
+        <partePessoa>
+          <ordem>#{ordem}</ordem>
+          <tipoParte>#{tipo_parte}</tipoParte>
+          <pessoa>
+            <nomePessoa>#{nome_pessoa}</nomePessoa>
+            <endereco>
+              <tipoEndereco>1</tipoEndereco>
+              <descricaoLogradouro>#{descricao_logradouro}</descricaoLogradouro>
+              <numero>#{numero_endereco}</numero>
+              <bairro>#{bairro}</bairro>
+              #{complemento_xml}<cidade>#{cidade}</cidade>
+              <uf>#{uf}</uf>
+              <cep>#{cep}</cep>
+            </endereco>
+            <documento>
+              <tipoDocumento>#{tipo_documento}</tipoDocumento>
+              <numero>#{numero_documento}</numero>
+              <descricao>#{descricao_documento}</descricao>
+              <orgaoEmissor>#{orgao_emissor}</orgaoEmissor>
+              <dataEmissao>#{data_emissao_documento}</dataEmissao>
+            </documento>
+          </pessoa>
+        </partePessoa>
       XML
     end
 

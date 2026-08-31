@@ -25,6 +25,13 @@ class AtoPraticado < ApplicationRecord
   # contagem de dígitos — 11 = CPF, 14 = CNPJ, convenção padrão nesse caso.
   TIPO_DOCUMENTO_POR_QTD_DIGITOS = { 11 => TIPO_DOCUMENTO_CPF, 14 => TIPO_DOCUMENTO_CNPJ }.freeze
 
+  # tipoParte que o TJCE espera em cada <partePessoa> de uma escritura ("E") —
+  # ver #parte_pessoa_escritura. Confirmado por quem conhece o domínio do
+  # cartório; não há tabela TJCE documentada pra esses códigos.
+  TIPO_PARTE_SOLICITANTE = 1
+  TIPO_PARTE_OUTORGANTE = 2
+  TIPO_PARTE_OUTORGADO = 3
+
   scope :pendentes_de_envio, -> {
     where(status: "N", lote: 0).where.not(tipo_selo: 99).order(:id).limit(50)
   }
@@ -104,22 +111,23 @@ class AtoPraticado < ApplicationRecord
     update!(status: "N", lote: 0)
   end
 
-  # nomePessoa/documento/endereço para <partePessoa> (ver client.rb#ato_xml).
-  # Prioridade: 1) retificacao_parte preenchida manualmente pelo usuário na
-  # tela de retificação (sobrepõe tudo, é intencional); 2) dados reais
-  # automáticos quando stiposelagem indica que este ato não é um ato de
-  # cartório comum e tem uma parte real identificável fora de
-  # sd_atosPraticados — hoje "D" (título de protesto), "C" (certidão), "E"
-  # (escritura) e "T" (testamento); 3) nil, e client.rb usa o placeholder
-  # genérico de sempre (stiposelagem em branco ou sem tratamento aqui).
+  # Array de hashes nomePessoa/documento/endereço, um por <partePessoa> (ver
+  # client.rb#ato_xml). A maioria dos casos tem uma única parte; "E"
+  # (escritura) tem três — ver #parte_pessoa_escritura. Prioridade:
+  # 1) retificacao_parte preenchida manualmente pelo usuário na tela de
+  # retificação (sobrepõe tudo, é intencional, sempre uma única parte);
+  # 2) dados reais automáticos por #stiposelagem — "D" (título de protesto),
+  # "C" (certidão), "E" (escritura) e "T" (testamento); 3) nil, e client.rb
+  # usa o placeholder genérico de sempre (stiposelagem em branco/não
+  # reconhecido, ou dado real não encontrado/não confiável).
   def parte_pessoa_dados
-    return retificacao_parte.parte_pessoa_dados if retificacao_parte&.preenchida?
+    return [ retificacao_parte.parte_pessoa_dados ] if retificacao_parte&.preenchida?
 
     case stiposelagem
-    when "D" then parte_pessoa_titulo
-    when "C" then parte_pessoa_certidao
+    when "D" then array_de_uma_parte(parte_pessoa_titulo)
+    when "C" then array_de_uma_parte(parte_pessoa_certidao)
     when "E" then parte_pessoa_escritura
-    when "T" then parte_pessoa_testamento
+    when "T" then array_de_uma_parte(parte_pessoa_testamento)
     end
   end
 
@@ -130,6 +138,24 @@ class AtoPraticado < ApplicationRecord
   end
 
   private
+
+  # "D"/"C"/"E"/"T" não é coluna de sd_atosPraticados (nem de nenhuma outra
+  # tabela do banco — checado em 2026-08-31 contra siscartd): vem de
+  # tblatosfermoju.stipoato, ligado por inoprotocolo = id_ato (confirmado
+  # cruzando id_ato/codigo_ato/numeroTalao reais contra
+  # inoprotocolo/icodigotj/snoatendimento nas duas tabelas). Um id_ato pode
+  # ter várias linhas em tblatosfermoju (uma por item de emolumento do mesmo
+  # protocolo), mas compartilham o mesmo stipoato na prática — se por acaso
+  # divergirem (ou não houver nenhuma linha), cai no placeholder em vez de
+  # arriscar classificar errado.
+  def stiposelagem
+    tipos = TblAtoFermoju.where(inoprotocolo: id_ato.to_i).distinct.pluck(:stipoato).compact_blank
+    tipos.first if tipos.one?
+  end
+
+  def array_de_uma_parte(dados)
+    dados && [ dados ]
+  end
 
   # stiposelagem "D": título de protesto (cbl_tit, protocolo = id_ato) — TJCE
   # espera o nome/documento reais do devedor, não o placeholder. cbl_tit não
@@ -167,18 +193,31 @@ class AtoPraticado < ApplicationRecord
     { nome: certidao.snome }.merge(documento)
   end
 
-  # stiposelagem "E": escritura (bd_escr, id = id_ato) — nome vem de gant1
-  # ("outorgante"), documento de cpfcgc_n. Formatado com pontuação
-  # (".", "-", "/") ao contrário de tblcontcertidoes.scpfcnpj, mas
-  # tipo_e_numero_documento_por_digitos já limpa isso.
+  # stiposelagem "E": escritura (bd_escr, id = id_ato) — única exceção entre
+  # os quatro tipos: manda três <partePessoa>, não uma. "Solicitante " + gant1
+  # (tipoParte SOLICITANTE, documento cpfcgc_n), "Outorgante " + gant1 (tipoParte
+  # OUTORGANTE, mesmo nome do solicitante e mesmo documento — regra confirmada
+  # com quem conhece o legado, não um bug de copiar/colar) e "Outorgado " +
+  # gado1 (tipoParte OUTORGADO, documento cpfcgc_d). cpfcgc_n/cpfcgc_d vêm
+  # formatados com pontuação (".", "-", "/") ao contrário de
+  # tblcontcertidoes.scpfcnpj, mas tipo_e_numero_documento_por_digitos já
+  # limpa isso. Só monta as três partes se nome e documento das duas pessoas
+  # (outorgante/outorgado) forem confiáveis — senão nil, placeholder genérico
+  # de sempre em vez de mandar dado parcial.
   def parte_pessoa_escritura
     escritura = BdEscr.find_by(id: id_ato.to_i)
     return nil unless escritura
+    return nil if escritura.gant1.blank? || escritura.gado1.blank?
 
-    documento = tipo_e_numero_documento_por_digitos(escritura.cpfcgc_n)
-    return nil unless documento
+    documento_outorgante = tipo_e_numero_documento_por_digitos(escritura.cpfcgc_n)
+    documento_outorgado = tipo_e_numero_documento_por_digitos(escritura.cpfcgc_d)
+    return nil unless documento_outorgante && documento_outorgado
 
-    { nome: escritura.gant1 }.merge(documento)
+    [
+      { tipo_parte: TIPO_PARTE_SOLICITANTE, nome: "Solicitante #{escritura.gant1}" }.merge(documento_outorgante),
+      { tipo_parte: TIPO_PARTE_OUTORGANTE, nome: "Outorgante #{escritura.gant1}" }.merge(documento_outorgante),
+      { tipo_parte: TIPO_PARTE_OUTORGADO, nome: "Outorgado #{escritura.gado1}" }.merge(documento_outorgado)
+    ]
   end
 
   # stiposelagem "T": testamento (bd_test, id = id_ato) — nome vem de

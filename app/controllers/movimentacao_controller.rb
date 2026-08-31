@@ -49,10 +49,15 @@ class MovimentacaoController < ApplicationController
   # o usuário salvar. Reaproveitado também pra reeditar um ato que já está
   # pendente de retificação (ver link "Editar retificação" no painel de
   # pendentes) — AtoPraticado.find não filtra por status.
+  #
+  # RetificacaoParte só modela uma parte (um <partePessoa>); parte_pessoa_dados
+  # devolve um array porque uma escritura ("E") manda três (ver
+  # AtoPraticado#parte_pessoa_escritura) — o pré-preenchimento usa só a
+  # primeira (o "Solicitante", nessa ordem) como ponto de partida.
   def editar_retificacao
     @ato = AtoPraticado.find(params[:id])
     @parte = @ato.retificacao_parte || @ato.build_retificacao_parte
-    if @parte.new_record? && (automatico = @ato.parte_pessoa_dados)
+    if @parte.new_record? && (automatico = @ato.parte_pessoa_dados&.first)
       @parte.assign_attributes(
         nome_pessoa: automatico[:nome],
         tipo_documento: automatico[:tipo_documento],
